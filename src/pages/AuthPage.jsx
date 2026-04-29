@@ -34,11 +34,13 @@ export default function AuthPage() {
       if (mode === 'login') {
         await login(form.email, form.password);
         toast.success('Welcome back! 👋');
+        navigate('/dashboard');
       } else {
         await signup(form.email, form.password, form.name);
-        toast.success('Account created! 🎉');
+        toast.success('Check your email to verify your account! 📧', { duration: 6000 });
+        setMode('login');
+        setForm({ ...form, password: '' });
       }
-      navigate('/dashboard');
     } catch (err) {
       toast.error(err.message);
     } finally {

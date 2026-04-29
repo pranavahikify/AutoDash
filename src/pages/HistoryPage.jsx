@@ -14,7 +14,7 @@ function timeAgo(dateStr) {
 }
 
 export default function HistoryPage() {
-  const { history } = useDashboard();
+  const { history, loadHistoryItem } = useDashboard();
   const navigate = useNavigate();
 
   return (
@@ -91,7 +91,10 @@ export default function HistoryPage() {
                   display: 'flex', alignItems: 'center', gap: '18px',
                   cursor: 'pointer',
                 }}
-                onClick={() => navigate('/dashboard')}
+                onClick={async () => {
+                  await loadHistoryItem(entry);
+                  navigate('/dashboard');
+                }}
                 whileHover={{ scale: 1.015 }}
               >
                 <div style={{

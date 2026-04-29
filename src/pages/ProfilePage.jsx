@@ -27,9 +27,11 @@ export default function ProfilePage() {
 
   const stats = [
     { label: 'Total Uploads', value: history.length, icon: <Upload size={18} />, color: '#2563EB' },
-    { label: 'Plan', value: user.plan === 'pro' ? 'Pro ⭐' : 'Free', icon: <CreditCard size={18} />, color: user.plan === 'pro' ? '#F59E0B' : '#60A5FA' },
-    { label: 'Member Since', value: new Date(user.createdAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }), icon: <Calendar size={18} />, color: '#818CF8' },
+    { label: 'Plan', value: user.user_metadata?.plan === 'pro' ? 'Pro ⭐' : 'Free', icon: <CreditCard size={18} />, color: user.user_metadata?.plan === 'pro' ? '#F59E0B' : '#60A5FA' },
+    { label: 'Member Since', value: new Date(user.created_at).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }), icon: <Calendar size={18} />, color: '#818CF8' },
   ];
+
+  const displayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
 
   return (
     <div style={{ minHeight: '100vh', paddingTop: '68px', background: '#050B18', position: 'relative' }}>
@@ -81,26 +83,28 @@ export default function ProfilePage() {
               fontSize: '2rem', fontWeight: 900,
               boxShadow: '0 8px 32px rgba(37,99,235,0.5)',
               flexShrink: 0,
-              position: 'relative', zIndex: 1
+              position: 'relative', zIndex: 1,
+              color: 'white',
+              textShadow: '0 2px 4px rgba(0,0,0,0.2)'
             }}>
-              {user.name?.[0]?.toUpperCase()}
+              {displayName[0]?.toUpperCase()}
             </div>
             <div style={{ flex: 1, position: 'relative', zIndex: 1 }}>
               <h1 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '4px', letterSpacing: '-0.02em' }}>
-                {user.name}
+                {displayName}
               </h1>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(160,180,220,0.7)', fontSize: '0.9rem', marginBottom: '12px' }}>
                 <Mail size={14} /> {user.email}
               </div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <span style={{
-                  background: user.plan === 'pro' ? 'linear-gradient(135deg, rgba(245,158,11,0.2), rgba(245,158,11,0.08))' : 'rgba(37,99,235,0.15)',
-                  border: `1px solid ${user.plan === 'pro' ? 'rgba(245,158,11,0.4)' : 'rgba(37,99,235,0.3)'}`,
-                  color: user.plan === 'pro' ? '#F59E0B' : '#60A5FA',
+                  background: user.user_metadata?.plan === 'pro' ? 'linear-gradient(135deg, rgba(245,158,11,0.2), rgba(245,158,11,0.08))' : 'rgba(37,99,235,0.15)',
+                  border: `1px solid ${user.user_metadata?.plan === 'pro' ? 'rgba(245,158,11,0.4)' : 'rgba(37,99,235,0.3)'}`,
+                  color: user.user_metadata?.plan === 'pro' ? '#F59E0B' : '#60A5FA',
                   borderRadius: '100px', padding: '4px 12px',
                   fontSize: '0.78rem', fontWeight: 700,
                 }}>
-                  {user.plan === 'pro' ? '⭐ Pro Plan' : 'Free Plan'}
+                  {user.user_metadata?.plan === 'pro' ? '⭐ Pro Plan' : 'Free Plan'}
                 </span>
                 <span style={{
                   background: 'rgba(52,211,153,0.12)',

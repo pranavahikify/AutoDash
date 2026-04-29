@@ -188,6 +188,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
 
 /* ── Upload Drop Zone ────────────────────────────────── */
 const UploadZone = ({ onLoad }) => {
+  const { saveToHistory } = useDashboard();
   const [busy, setBusy] = useState(false);
   const onDrop = useCallback(files => {
     const f = files[0]; if (!f) return;
@@ -198,6 +199,7 @@ const UploadZone = ({ onLoad }) => {
         setBusy(false);
         if (!res.data.length) return toast.error('CSV is empty');
         onLoad(res.data, f.name);
+        saveToHistory(f.name, { rows: res.data.length, cols: Object.keys(res.data[0]).length });
         toast.success(`✅ Loaded ${res.data.length} rows`);
       },
       error: () => { setBusy(false); toast.error('Parse error'); }
@@ -307,7 +309,7 @@ export default function DashboardPage() {
 
   const tableRowsData = activeData.slice(0, 15);
   const insights = csvData ? getAIInsights(activeData, cols) : [];
-  const userName = user?.name ? user.name.charAt(0).toUpperCase() + user.name.slice(1) : 'User';
+  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
 
   /* ── Chart Selection Logic ── */
   const [chartConfig, setChartConfig] = useState({

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext(null);
 
@@ -7,54 +8,56 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate checking persisted session
-    const stored = localStorage.getItem('autodash_user');
-    if (stored) {
-      try { setUser(JSON.parse(stored)); } catch {}
-    }
-    setLoading(false);
+    // Check active session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // Listen for changes on auth state
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const login = async (email, password) => {
-    // Mock auth – replace with real backend call
-    if (!email || !password) throw new Error('Email and password are required');
-    const userData = {
-      id: Date.now().toString(),
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
-      name: email.split('@')[0],
-      plan: 'free',
-      uploads: 0,
-      createdAt: new Date().toISOString(),
-    };
-    setUser(userData);
-    localStorage.setItem('autodash_user', JSON.stringify(userData));
-    return userData;
+      password,
+    });
+    if (error) throw error;
+    return data.user;
   };
 
   const signup = async (email, password, name) => {
-    if (!email || !password || !name) throw new Error('All fields are required');
-    const userData = {
-      id: Date.now().toString(),
+    const { data, error } = await supabase.auth.signUp({
       email,
-      name,
-      plan: 'free',
-      uploads: 0,
-      createdAt: new Date().toISOString(),
-    };
-    setUser(userData);
-    localStorage.setItem('autodash_user', JSON.stringify(userData));
-    return userData;
+      password,
+      options: {
+        data: {
+          full_name: name,
+        },
+      },
+    });
+    if (error) throw error;
+    return data.user;
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('autodash_user');
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
   };
 
-  const upgradePlan = () => {
-    const updated = { ...user, plan: 'pro' };
-    setUser(updated);
-    localStorage.setItem('autodash_user', JSON.stringify(updated));
+  const upgradePlan = async () => {
+    // This would typically involve a Stripe integration or updating user metadata
+    const { data, error } = await supabase.auth.updateUser({
+      data: { plan: 'pro' }
+    });
+    if (error) throw error;
+    return data.user;
   };
 
   return (

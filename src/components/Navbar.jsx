@@ -148,10 +148,12 @@ export default function Navbar({ darkMode, toggleDark }) {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '0.75rem', fontWeight: 700,
                   }}>
-                    {user.name?.[0]?.toUpperCase()}
+                    {(user.user_metadata?.full_name || user.email?.split('@')[0])?.[0]?.toUpperCase()}
                   </div>
-                  <span style={{ fontSize: '0.88rem', fontWeight: 500 }}>{user.name}</span>
-                  {user.plan === 'pro' && (
+                  <span style={{ fontSize: '0.88rem', fontWeight: 500 }}>
+                    {user.user_metadata?.full_name || user.email?.split('@')[0]}
+                  </span>
+                  {user.user_metadata?.plan === 'pro' && (
                     <span style={{
                       background: 'linear-gradient(135deg, #F59E0B, #EF4444)',
                       borderRadius: '6px', padding: '2px 7px',
