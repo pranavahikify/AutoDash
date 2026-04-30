@@ -123,7 +123,6 @@ const Sidebar = ({ collapsed, onToggle }) => {
     { label: 'Dashboard', icon: <LayoutDashboard size={18} />, path: '/dashboard' },
     { label: 'Profile', icon: <User size={18} />, path: '/profile' },
     { label: 'History', icon: <History size={18} />, path: '/history' },
-    { label: 'Pricing', icon: <CreditCard size={18} />, path: '/pricing' },
   ];
   const cur = window.location.pathname;
   return (
