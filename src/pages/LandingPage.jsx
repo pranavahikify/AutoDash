@@ -341,35 +341,6 @@ export default function LandingPage() {
       {/* ── QUOTES ───────────────────────────────────────── */}
       <QuotesSlider />
 
-      {/* ── PRICING PREVIEW ──────────────────────────────── */}
-      <section id="pricing-preview" style={{ padding: '100px 24px' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <SectionHeader
-            tag="Pricing"
-            title={<>Simple, transparent<br /><span className="gradient-text">pricing</span></>}
-            sub="Start free, upgrade when you're ready."
-          />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginTop: '60px' }}>
-            <PricingCard
-              plan="Free"
-              price="₹0"
-              period="forever"
-              features={['5 uploads/month', 'Basic charts', 'CSV export', 'Email support']}
-              cta="Get Started"
-              href="/auth"
-            />
-            <PricingCard
-              plan="Pro"
-              price="₹50"
-              period="per month"
-              features={['Unlimited uploads', 'All chart types', 'CSV & PDF export', 'Priority support', 'Advanced insights']}
-              cta="Upgrade to Pro"
-              href="/pricing"
-              featured
-            />
-          </div>
-        </div>
-      </section>
 
       {/* ── CTA BANNER ───────────────────────────────────── */}
       <section style={{ padding: '100px 24px' }}>
@@ -424,7 +395,7 @@ export default function LandingPage() {
                 Transform your CSV data into stunning interactive dashboards instantly.
               </p>
             </div>
-            <FooterLinks title="Product" links={[['Features', '#features'], ['How It Works', '#how'], ['Pricing', '/pricing']]} />
+            <FooterLinks title="Product" links={[['Features', '#features'], ['How It Works', '#how']]} />
             <FooterLinks title="Company" links={[['About', '#'], ['Blog', '#'], ['Careers', '#']]} />
             <FooterLinks title="Legal" links={[['Privacy', '#'], ['Terms', '#'], ['Security', '#']]} />
           </div>
@@ -475,64 +446,6 @@ function SectionHeader({ tag, title, sub }) {
   );
 }
 
-function PricingCard({ plan, price, period, features, cta, href, featured }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6 }}
-      className="glass-card glow-border"
-      style={{
-        padding: '36px 32px',
-        background: featured ? 'linear-gradient(135deg, rgba(37,99,235,0.2), rgba(37,99,235,0.05))' : 'rgba(255,255,255,0.03)',
-        border: featured ? '1px solid rgba(37,99,235,0.45)' : '1px solid rgba(255,255,255,0.09)',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-    >
-      {featured && (
-        <div style={{
-          position: 'absolute', top: '16px', right: '16px',
-          background: 'linear-gradient(135deg, #2563EB, #60A5FA)',
-          borderRadius: '100px', padding: '4px 12px',
-          fontSize: '0.72rem', fontWeight: 700,
-        }}>MOST POPULAR</div>
-      )}
-      <div style={{ marginBottom: '28px' }}>
-        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: featured ? '#60A5FA' : 'rgba(160,180,220,0.7)', marginBottom: '8px' }}>{plan}</div>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-          <span style={{ fontSize: '2.8rem', fontWeight: 900, letterSpacing: '-0.03em' }}>{price}</span>
-          <span style={{ color: 'rgba(160,180,220,0.6)', fontSize: '0.85rem' }}>/ {period}</span>
-        </div>
-      </div>
-      <ul style={{ listStyle: 'none', marginBottom: '32px' }}>
-        {features.map(f => (
-          <li key={f} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', fontSize: '0.92rem', color: 'rgba(200,220,255,0.85)' }}>
-            <CheckCircle size={16} color="#34D399" />
-            {f}
-          </li>
-        ))}
-      </ul>
-      <Link to={href} style={{ textDecoration: 'none' }}>
-        <motion.button
-          whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-          style={{
-            width: '100%',
-            background: featured ? 'linear-gradient(135deg, #2563EB, #3B82F6)' : 'rgba(255,255,255,0.06)',
-            border: featured ? 'none' : '1px solid rgba(255,255,255,0.12)',
-            color: '#fff',
-            borderRadius: '12px', padding: '14px',
-            fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer',
-            boxShadow: featured ? '0 4px 20px rgba(37,99,235,0.45)' : 'none',
-          }}
-        >
-          {cta}
-        </motion.button>
-      </Link>
-    </motion.div>
-  );
-}
 
 function FooterLinks({ title, links }) {
   return (

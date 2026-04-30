@@ -27,7 +27,6 @@ export default function ProfilePage() {
 
   const stats = [
     { label: 'Total Uploads', value: history.length, icon: <Upload size={18} />, color: '#2563EB' },
-    { label: 'Plan', value: user.user_metadata?.plan === 'pro' ? 'Pro ⭐' : 'Free', icon: <CreditCard size={18} />, color: user.user_metadata?.plan === 'pro' ? '#F59E0B' : '#60A5FA' },
     { label: 'Member Since', value: new Date(user.created_at).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }), icon: <Calendar size={18} />, color: '#818CF8' },
   ];
 
@@ -98,15 +97,6 @@ export default function ProfilePage() {
               </div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <span style={{
-                  background: user.user_metadata?.plan === 'pro' ? 'linear-gradient(135deg, rgba(245,158,11,0.2), rgba(245,158,11,0.08))' : 'rgba(37,99,235,0.15)',
-                  border: `1px solid ${user.user_metadata?.plan === 'pro' ? 'rgba(245,158,11,0.4)' : 'rgba(37,99,235,0.3)'}`,
-                  color: user.user_metadata?.plan === 'pro' ? '#F59E0B' : '#60A5FA',
-                  borderRadius: '100px', padding: '4px 12px',
-                  fontSize: '0.78rem', fontWeight: 700,
-                }}>
-                  {user.user_metadata?.plan === 'pro' ? '⭐ Pro Plan' : 'Free Plan'}
-                </span>
-                <span style={{
                   background: 'rgba(52,211,153,0.12)',
                   border: '1px solid rgba(52,211,153,0.25)',
                   color: '#34D399',
@@ -127,39 +117,6 @@ export default function ProfilePage() {
           </div>
 
           {/* Upgrade nudge (if free) */}
-          {user.plan === 'free' && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-              className="glass-card"
-              style={{
-                padding: '28px 32px',
-                background: 'linear-gradient(135deg, rgba(37,99,235,0.15), rgba(129,140,248,0.08))',
-                border: '1px solid rgba(37,99,235,0.3)',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px', flexWrap: 'wrap',
-              }}
-            >
-              <div>
-                <div style={{ fontWeight: 700, marginBottom: '4px', fontSize: '1.05rem' }}>
-                  <Zap size={16} color="#F59E0B" style={{ display: 'inline', marginRight: '7px' }} />
-                  Unlock Pro for ₹50/month
-                </div>
-                <p style={{ color: 'rgba(160,180,220,0.65)', fontSize: '0.88rem' }}>
-                  Unlimited uploads, PDF export, and advanced insights
-                </p>
-              </div>
-              <Link to="/pricing" style={{ textDecoration: 'none' }}>
-                <motion.button
-                  whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                  className="btn-primary"
-                  style={{ padding: '11px 24px', fontSize: '0.9rem', whiteSpace: 'nowrap' }}
-                >
-                  Upgrade Now
-                </motion.button>
-              </Link>
-            </motion.div>
-          )}
         </motion.div>
       </div>
     </div>

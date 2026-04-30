@@ -7,7 +7,6 @@ import Navbar from './components/Navbar';
 import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
-import PricingPage from './pages/PricingPage';
 import HistoryPage from './pages/HistoryPage';
 import ProfilePage from './pages/ProfilePage';
 
@@ -58,7 +57,6 @@ function AppInner() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/auth" element={<AuthPage />} />
-        <Route path="/pricing" element={<PricingPage />} />
         <Route
           path="/dashboard"
           element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}

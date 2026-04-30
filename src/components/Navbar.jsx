@@ -26,13 +26,11 @@ export default function Navbar({ darkMode, toggleDark }) {
   const navLinks = user
     ? [
         { to: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={16} /> },
-        { to: '/pricing', label: 'Pricing', icon: <CreditCard size={16} /> },
         { to: '/history', label: 'History', icon: <History size={16} /> },
       ]
     : [
         { to: '/#features', label: 'Features' },
         { to: '/#how', label: 'How It Works' },
-        { to: '/pricing', label: 'Pricing' },
       ];
 
   const isActive = (path) => location.pathname === path;
