@@ -28,10 +28,7 @@ export default function Navbar({ darkMode, toggleDark }) {
         { to: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={16} /> },
         { to: '/history', label: 'History', icon: <History size={16} /> },
       ]
-    : [
-        { to: '/#features', label: 'Features' },
-        { to: '/#how', label: 'How It Works' },
-      ];
+    : [];
 
   const isActive = (path) => location.pathname === path;
 
@@ -104,25 +101,6 @@ export default function Navbar({ darkMode, toggleDark }) {
 
           {/* Right Side */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {/* Dark/Light toggle */}
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={toggleDark}
-              style={{
-                background: 'rgba(255,255,255,0.07)',
-                border: '1px solid rgba(255,255,255,0.10)',
-                borderRadius: '10px',
-                width: 40, height: 40,
-                cursor: 'pointer',
-                color: '#fff',
-                fontSize: '1.1rem',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}
-              title="Toggle theme"
-            >
-              {darkMode ? '☀️' : '🌙'}
-            </motion.button>
 
             {user ? (
               <div style={{ position: 'relative' }}>
