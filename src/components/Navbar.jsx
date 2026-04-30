@@ -151,13 +151,6 @@ export default function Navbar({ darkMode, toggleDark }) {
                   <span style={{ fontSize: '0.88rem', fontWeight: 500 }}>
                     {user.user_metadata?.full_name || user.email?.split('@')[0]}
                   </span>
-                  {user.user_metadata?.plan === 'pro' && (
-                    <span style={{
-                      background: 'linear-gradient(135deg, #F59E0B, #EF4444)',
-                      borderRadius: '6px', padding: '2px 7px',
-                      fontSize: '0.7rem', fontWeight: 700,
-                    }}>PRO</span>
-                  )}
                 </motion.button>
 
                 <AnimatePresence>
@@ -181,11 +174,6 @@ export default function Navbar({ darkMode, toggleDark }) {
                       <Link to="/profile" onClick={() => setProfileOpen(false)} style={{ textDecoration: 'none' }}>
                         <div style={menuItemStyle}>
                           <User size={15} /> Profile
-                        </div>
-                      </Link>
-                      <Link to="/pricing" onClick={() => setProfileOpen(false)} style={{ textDecoration: 'none' }}>
-                        <div style={menuItemStyle}>
-                          <CreditCard size={15} /> Pricing
                         </div>
                       </Link>
                       <div style={{ margin: '6px 0', borderTop: '1px solid rgba(255,255,255,0.07)' }} />
