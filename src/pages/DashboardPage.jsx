@@ -1,4 +1,6 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
@@ -237,6 +239,7 @@ const UploadZone = ({ onLoad }) => {
 };
 
 /* ══ MAIN DASHBOARD ════════════════════════════════════ */
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const { csvData, headers, fileName, loadCSV, history } = useDashboard();
@@ -248,6 +251,20 @@ export default function DashboardPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [template, setTemplate] = useState('default'); // default | sales | marketing
   const [liveData, setLiveData] = useState(null);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const dashboardRef = useRef(null);
+  const exportMenuRef = useRef(null);
+
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setShowExportMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   /* ── Analyse CSV columns ── */
   const cols = csvData ? classifyColumns(headers, csvData) : { numeric:[], dates:[], text:[], ids:[] };
@@ -349,8 +366,42 @@ export default function DashboardPage() {
     statCards.push({ label: `Unique ${catCol}`, value: fmt(uniqueCats), trend: 0, color: 'linear-gradient(135deg,#EC4899,#BE185D)' });
   }
 
-  const exportAsImage = () => {
-    toast.success('Generating PNG report...');
+  const exportDashboard = async (format) => {
+    if (!dashboardRef.current) return;
+    setShowExportMenu(false);
+    
+    const toastId = toast.loading(`Generating ${format.toUpperCase()}...`);
+    
+    try {
+      // Temporarily hide elements that shouldn't be in the export (like sidebar if needed, but here we just capture the main ref)
+      const canvas = await html2canvas(dashboardRef.current, {
+        scale: 2,
+        backgroundColor: '#050B18', // Match dashboard background
+        useCORS: true,
+        logging: false,
+      });
+
+      if (format === 'png') {
+        const link = document.createElement('a');
+        link.download = `autodash-report-${fileName?.replace('.csv', '') || 'export'}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        toast.success('PNG exported successfully!', { id: toastId });
+      } else if (format === 'pdf') {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+          orientation: 'landscape',
+          unit: 'px',
+          format: [canvas.width / 2, canvas.height / 2]
+        });
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
+        pdf.save(`autodash-report-${fileName?.replace('.csv', '') || 'export'}.pdf`);
+        toast.success('PDF exported successfully!', { id: toastId });
+      }
+    } catch (err) {
+      console.error('Export failed:', err);
+      toast.error('Export failed. Please try again.', { id: toastId });
+    }
   };
 
   /* ── Table ── */
@@ -423,15 +474,79 @@ export default function DashboardPage() {
                 }} />
             </div>
 
-            <motion.button 
-              whileHover={{ scale: 1.05 }} onClick={exportAsImage}
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#F0F6FF', padding: '10px 14px', borderRadius: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Download size={16} /> <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Export</span>
-            </motion.button>
+            <div style={{ position: 'relative' }}>
+              <motion.button 
+                whileHover={{ scale: 1.05 }} 
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                style={{ 
+                  background: 'rgba(37, 99, 235, 0.15)', 
+                  border: '1px solid rgba(37, 99, 235, 0.3)', 
+                  color: '#60A5FA', 
+                  padding: '10px 18px', 
+                  borderRadius: 12, 
+                  cursor: 'pointer', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 8,
+                  fontWeight: 700,
+                  fontSize: '0.88rem'
+                }}>
+                <Download size={16} /> Export
+                <ChevronDown size={14} style={{ transform: showExportMenu ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+              </motion.button>
+
+              <AnimatePresence>
+                {showExportMenu && (
+                  <motion.div
+                    ref={exportMenuRef}
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    style={{
+                      position: 'absolute', top: '100%', right: 0, marginTop: 10,
+                      background: 'rgba(10, 18, 40, 0.98)',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: 16, padding: 8, minWidth: 160,
+                      boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
+                      backdropFilter: 'blur(24px)', zIndex: 100,
+                    }}
+                  >
+                    <motion.button 
+                      whileHover={{ background: 'rgba(255,255,255,0.05)' }}
+                      onClick={() => exportDashboard('pdf')} 
+                      style={{
+                        width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+                        padding: '12px 14px', background: 'transparent', border: 'none',
+                        borderRadius: 12, color: '#F0F6FF', cursor: 'pointer', fontSize: '0.85rem'
+                      }}>
+                      <FilePdf size={16} color="#EF4444" />
+                      <div style={{ textAlign: 'left' }}>
+                        <div style={{ fontWeight: 700 }}>Export as PDF</div>
+                        <div style={{ fontSize: '0.7rem', color: 'rgba(160,180,220,0.5)' }}>Vectorized document</div>
+                      </div>
+                    </motion.button>
+                    <motion.button 
+                      whileHover={{ background: 'rgba(255,255,255,0.05)' }}
+                      onClick={() => exportDashboard('png')} 
+                      style={{
+                        width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+                        padding: '12px 14px', background: 'transparent', border: 'none',
+                        borderRadius: 12, color: '#F0F6FF', cursor: 'pointer', fontSize: '0.85rem'
+                      }}>
+                      <FilePng size={16} color="#3B82F6" />
+                      <div style={{ textAlign: 'left' }}>
+                        <div style={{ fontWeight: 700 }}>Export as PNG</div>
+                        <div style={{ fontSize: '0.7rem', color: 'rgba(160,180,220,0.5)' }}>High-res image</div>
+                      </div>
+                    </motion.button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
 
-        <div style={{ padding: '24px 28px' }}>
+        <div ref={dashboardRef} style={{ padding: '24px 28px' }}>
           {!csvData ? <UploadZone onLoad={loadCSV} /> : (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
 
