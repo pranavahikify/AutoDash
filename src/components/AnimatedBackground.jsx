@@ -46,21 +46,24 @@ export default function AnimatedBackground() {
       {/* Rotating Black Hole Background */}
       <motion.div
         animate={{ rotate: 360 }}
-        transition={{ duration: 120, repeat: Infinity, ease: 'linear' }}
+        transition={{ duration: 180, repeat: Infinity, ease: 'linear' }}
         style={{
           position: 'absolute',
-          top: '-20%',
-          right: '-10%',
-          width: '120vw',
-          height: '120vw',
+          top: '50%',
+          left: '50%',
+          width: '160vw',
+          height: '160vw',
           backgroundImage: `url(${HERO_IMAGE})`,
           backgroundSize: 'contain',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
-          opacity: 0.55,
-          filter: 'brightness(0.8) contrast(1.1) blur(2px)',
+          opacity: 0.5,
+          filter: 'brightness(0.7) contrast(1.1) blur(1px)',
           zIndex: 0,
           pointerEvents: 'none',
+          transformOrigin: 'center center',
+          x: '-50%',
+          y: '-50%',
         }}
       />
 
