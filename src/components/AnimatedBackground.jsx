@@ -7,14 +7,14 @@ export default function AnimatedBackground() {
       inset: 0,
       zIndex: 0,
       overflow: 'hidden',
-      background: 'radial-gradient(ellipse at 60% 20%, rgba(37,99,235,0.22) 0%, transparent 55%), radial-gradient(ellipse at 20% 80%, rgba(129,140,248,0.15) 0%, transparent 50%), #050B18',
+      background: 'radial-gradient(circle at 50% 50%, rgba(30, 58, 138, 0.15) 0%, transparent 70%), #02040A',
     }}>
       {/* Animated grid */}
       <div style={{
         position: 'absolute', inset: 0,
         backgroundImage: `
-          linear-gradient(rgba(37,99,235,0.06) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(37,99,235,0.06) 1px, transparent 1px)
+          linear-gradient(rgba(37,99,235,0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(37,99,235,0.04) 1px, transparent 1px)
         `,
         backgroundSize: '60px 60px',
         maskImage: 'radial-gradient(ellipse at 50% 40%, black 30%, transparent 75%)',

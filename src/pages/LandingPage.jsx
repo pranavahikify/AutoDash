@@ -8,6 +8,7 @@ import {
 import GLBViewer from '../components/GLBViewer';
 import AnimatedBackground from '../components/AnimatedBackground';
 import QuotesSlider from '../components/QuotesSlider';
+const HERO_IMAGE = '/images/black-hole.png';
 
 /* ─── Feature Cards data ──────────────────────────────── */
 const features = [
@@ -59,7 +60,7 @@ export default function LandingPage() {
   const heroY = useTransform(scrollYProgress, [0, 1], ['0%', '20%']);
 
   return (
-    <div style={{ background: '#050B18', color: '#F0F6FF', position: 'relative' }}>
+    <div style={{ background: '#02040A', color: '#F0F6FF', position: 'relative' }}>
       {/* ── HERO ─────────────────────────────────────────── */}
       <section
         ref={heroRef}
@@ -72,6 +73,14 @@ export default function LandingPage() {
           overflow: 'hidden',
         }}
       >
+        {/* Black Hole Hero Background */}
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 0,
+          backgroundImage: `url(${HERO_IMAGE})`,
+          backgroundSize: 'cover', backgroundPosition: 'center',
+          opacity: 0.6, filter: 'brightness(0.7) contrast(1.2)'
+        }} />
+        
         {/* CSS animated background (orbs + grid) */}
         <AnimatedBackground />
 
