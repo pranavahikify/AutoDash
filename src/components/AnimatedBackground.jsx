@@ -1,44 +1,59 @@
 import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
 
 export default function AnimatedBackground() {
   const HERO_IMAGE = '/images/black-hole.png';
+  const [stars, setStars] = useState([]);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    // Reduce star count significantly for mobile to prevent "hanging"
+    const count = window.innerWidth < 768 ? 40 : 100;
+    const newStars = Array.from({ length: count }).map((_, i) => ({
+      id: i,
+      size: Math.random() * 2 + 1,
+      top: `${Math.random() * 100}%`,
+      left: `${Math.random() * 100}%`,
+      delay: Math.random() * 5,
+      duration: Math.random() * 3 + 2,
+    }));
+    setStars(newStars);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   return (
     <div style={{
       position: 'absolute',
-      inset: 0,
-      zIndex: 0,
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
       overflow: 'hidden',
+      zIndex: 0,
       background: '#010409',
+      pointerEvents: 'none',
     }}>
-      {/* Stars Starfield */}
-      {[...Array(100)].map((_, i) => (
-        <motion.div
-          key={i}
-          initial={{ 
-            opacity: Math.random() * 0.5 + 0.2,
-            scale: Math.random() * 0.5 + 0.5,
-          }}
-          animate={{
-            opacity: [0.2, 0.8, 0.2],
-            y: [0, Math.random() * 30 - 15, 0],
-            x: [0, Math.random() * 30 - 15, 0],
-          }}
-          transition={{
-            duration: 5 + Math.random() * 10,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
+      {/* Optimized Starfield (Using CSS for better performance) */}
+      {stars.map((star) => (
+        <div
+          key={star.id}
+          className="star-element"
           style={{
             position: 'absolute',
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            width: Math.random() * 3,
-            height: Math.random() * 3,
+            top: star.top,
+            left: star.left,
+            width: star.size,
+            height: star.size,
+            backgroundColor: '#fff',
             borderRadius: '50%',
-            background: i % 10 === 0 ? '#60A5FA' : '#fff',
-            boxShadow: '0 0 4px rgba(255,255,255,0.8)',
-            pointerEvents: 'none',
+            opacity: 0.5,
+            animation: `twinkle ${star.duration}s infinite ease-in-out ${star.delay}s`,
+            willChange: 'opacity',
           }}
         />
       ))}
@@ -51,19 +66,20 @@ export default function AnimatedBackground() {
           position: 'absolute',
           top: '50%',
           left: '50%',
-          width: '160vw',
-          height: '160vw',
+          width: isMobile ? '250vw' : '160vw',
+          height: isMobile ? '250vw' : '160vw',
           backgroundImage: `url(${HERO_IMAGE})`,
           backgroundSize: 'contain',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
-          opacity: 0.5,
-          filter: 'brightness(0.7) contrast(1.1) blur(1px)',
+          opacity: 0.45,
+          filter: isMobile ? 'brightness(0.7) contrast(1.1)' : 'brightness(0.7) contrast(1.1) blur(1px)',
           zIndex: 0,
           pointerEvents: 'none',
           transformOrigin: 'center center',
           x: '-50%',
           y: '-50%',
+          willChange: 'transform',
         }}
       />
 
@@ -74,6 +90,16 @@ export default function AnimatedBackground() {
         background: 'radial-gradient(circle at 50% 50%, transparent 20%, rgba(1,4,9,0.7) 100%)',
         zIndex: 1,
       }} />
+
+      <style>{`
+        @keyframes twinkle {
+          0%, 100% { opacity: 0.3; transform: scale(1); }
+          50% { opacity: 0.8; transform: scale(1.2); }
+        }
+        .star-element {
+          pointer-events: none;
+        }
+      `}</style>
     </div>
   );
 }

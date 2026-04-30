@@ -58,7 +58,7 @@ export default function LandingPage() {
   const heroY = useTransform(scrollYProgress, [0, 1], ['0%', '20%']);
 
   return (
-    <div style={{ background: '#010409', color: '#F0F6FF', position: 'relative' }}>
+    <div style={{ background: '#010409', color: '#F0F6FF', position: 'relative', overflowX: 'hidden' }}>
       {/* ── HERO ─────────────────────────────────────────── */}
       <section
         ref={heroRef}
@@ -69,11 +69,12 @@ export default function LandingPage() {
           alignItems: 'center',
           justifyContent: 'center',
           overflow: 'hidden',
+          padding: '0 20px',
         }}
       >
         <AnimatedBackground />
 
-        {/* Two-column layout */}
+        {/* Centered layout */}
         <motion.div
           style={{
             opacity: heroOpacity,
@@ -83,24 +84,30 @@ export default function LandingPage() {
             width: '100%',
             maxWidth: '1280px',
             margin: '0 auto',
-            padding: '110px 24px 80px',
+            padding: '80px 0 60px',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
             textAlign: 'center',
-            zIndex: 5,
           }}
         >
           {/* ── Text Content ── */}
-          <div style={{ maxWidth: '800px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ 
+            maxWidth: '900px', 
+            width: '100%',
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center',
+            padding: '0 10px'
+          }}>
 
             {/* Badge */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.7 }}
-              style={{ marginBottom: '28px' }}
+              style={{ marginBottom: '24px' }}
             >
               <div style={{
                 display: 'inline-flex', alignItems: 'center', gap: '8px',
@@ -111,42 +118,47 @@ export default function LandingPage() {
                 backdropFilter: 'blur(12px)',
               }}>
                 <Star size={14} color="#F59E0B" fill="#F59E0B" />
-                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#93C5FD' }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#60A5FA', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
                   #1 CSV Dashboard Generator
                 </span>
               </div>
             </motion.div>
 
-            {/* Heading */}
+            {/* Title */}
             <motion.h1
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35, duration: 0.8 }}
-              className="glow-text"
               style={{
-                fontSize: 'clamp(2.4rem, 4.5vw, 4.2rem)',
-                fontFamily: 'Outfit, sans-serif',
+                fontSize: 'clamp(2.5rem, 8vw, 5.5rem)',
                 fontWeight: 900,
-                lineHeight: 1.08,
-                letterSpacing: '-0.03em',
-                marginBottom: '20px',
+                lineHeight: 1.05,
+                letterSpacing: '-0.04em',
+                marginBottom: '24px',
+                color: '#fff',
               }}
             >
-              Transform CSV Data into{' '}
-              <span className="gradient-text">Stunning Dashboards</span>
+              Transform CSV Data into<br />
+              <span style={{
+                background: 'linear-gradient(135deg, #60A5FA 0%, #2563EB 50%, #1D4ED8 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                display: 'inline-block',
+                padding: '0 4px',
+              }}>Stunning Dashboards</span>
             </motion.h1>
 
-            {/* Subheading */}
+            {/* Description */}
             <motion.p
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 25 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.7 }}
               style={{
-                fontSize: 'clamp(0.95rem, 1.8vw, 1.15rem)',
-                color: 'rgba(200,220,255,0.82)',
-                maxWidth: '600px',
-                marginBottom: '40px',
-                lineHeight: 1.75,
+                fontSize: 'clamp(1rem, 2.5vw, 1.25rem)',
+                color: 'rgba(200,220,255,0.85)',
+                maxWidth: '700px',
+                marginBottom: '44px',
+                lineHeight: 1.6,
                 fontWeight: 400,
               }}
             >
@@ -159,16 +171,23 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.65, duration: 0.7 }}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                gap: '16px', 
+                flexWrap: 'wrap',
+                width: '100%' 
+              }}
             >
               <Link to="/auth" style={{ textDecoration: 'none' }}>
                 <motion.button
                   whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.96 }}
                   className="btn-primary"
                   style={{
-                    padding: '15px 32px', fontSize: '1rem',
+                    padding: '16px 36px', fontSize: '1.05rem',
                     display: 'flex', alignItems: 'center', gap: '10px',
-                    boxShadow: '0 0 32px rgba(37,99,235,0.55)',
+                    boxShadow: '0 0 32px rgba(37,99,235,0.4)',
                   }}
                 >
                   Get Started Free <ArrowRight size={18} />
@@ -178,7 +197,7 @@ export default function LandingPage() {
                 <motion.button
                   whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                   className="btn-secondary"
-                  style={{ padding: '14px 28px', fontSize: '0.97rem' }}
+                  style={{ padding: '15px 30px', fontSize: '1rem' }}
                 >
                   See Features
                 </motion.button>
@@ -190,12 +209,19 @@ export default function LandingPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1, duration: 0.7 }}
-              style={{ display: 'flex', justifyContent: 'center', gap: '48px', marginTop: '48px', flexWrap: 'wrap' }}
+              style={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                gap: 'clamp(24px, 6vw, 64px)', 
+                marginTop: '60px', 
+                flexWrap: 'wrap',
+                width: '100%'
+              }}
             >
               {[['10K+', 'Users'], ['50M+', 'Rows Parsed'], ['4.9★', 'Rating']].map(([val, label]) => (
-                <div key={label}>
-                  <div style={{ fontSize: '1.7rem', fontWeight: 800, color: '#60A5FA' }}>{val}</div>
-                  <div style={{ fontSize: '0.78rem', color: 'rgba(160,180,220,0.55)', marginTop: '3px' }}>{label}</div>
+                <div key={label} style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: 800, color: '#60A5FA' }}>{val}</div>
+                  <div style={{ fontSize: '0.85rem', color: 'rgba(160,180,220,0.6)', marginTop: '4px' }}>{label}</div>
                 </div>
               ))}
             </motion.div>
@@ -206,9 +232,9 @@ export default function LandingPage() {
         <motion.div
           animate={{ y: [0, 10, 0] }}
           transition={{ repeat: Infinity, duration: 2 }}
-          style={{ position: 'absolute', bottom: '36px', left: '50%', transform: 'translateX(-50%)', zIndex: 5, cursor: 'pointer' }}
+          style={{ position: 'absolute', bottom: '32px', left: '50%', transform: 'translateX(-50%)', zIndex: 5, cursor: 'pointer' }}
         >
-          <ChevronDown size={28} color="rgba(255,255,255,0.4)" />
+          <ChevronDown size={28} color="rgba(255,255,255,0.3)" />
         </motion.div>
       </section>
 
