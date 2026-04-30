@@ -5,10 +5,8 @@ import {
   BarChart2, Zap, Filter, Upload, ArrowRight, ChevronDown,
   Globe, Shield, Cpu, TrendingUp, Star, CheckCircle
 } from 'lucide-react';
-import GLBViewer from '../components/GLBViewer';
 import AnimatedBackground from '../components/AnimatedBackground';
 import QuotesSlider from '../components/QuotesSlider';
-const HERO_IMAGE = '/images/black-hole.png';
 
 /* ─── Feature Cards data ──────────────────────────────── */
 const features = [
@@ -60,7 +58,7 @@ export default function LandingPage() {
   const heroY = useTransform(scrollYProgress, [0, 1], ['0%', '20%']);
 
   return (
-    <div style={{ background: '#02040A', color: '#F0F6FF', position: 'relative' }}>
+    <div style={{ background: '#010409', color: '#F0F6FF', position: 'relative' }}>
       {/* ── HERO ─────────────────────────────────────────── */}
       <section
         ref={heroRef}
@@ -73,15 +71,6 @@ export default function LandingPage() {
           overflow: 'hidden',
         }}
       >
-        {/* Black Hole Hero Background */}
-        <div style={{
-          position: 'absolute', inset: 0, zIndex: 0,
-          backgroundImage: `url(${HERO_IMAGE})`,
-          backgroundSize: 'cover', backgroundPosition: 'center',
-          opacity: 0.6, filter: 'brightness(0.7) contrast(1.2)'
-        }} />
-        
-        {/* CSS animated background (orbs + grid) */}
         <AnimatedBackground />
 
         {/* Two-column layout */}
@@ -94,16 +83,17 @@ export default function LandingPage() {
             width: '100%',
             maxWidth: '1280px',
             margin: '0 auto',
-            padding: '110px 48px 80px',
+            padding: '110px 24px 80px',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '48px',
-            flexWrap: 'wrap',
+            justifyContent: 'center',
+            textAlign: 'center',
+            zIndex: 5,
           }}
         >
-          {/* ── LEFT: text ── */}
-          <div style={{ flex: '1 1 440px', minWidth: '280px' }}>
+          {/* ── Text Content ── */}
+          <div style={{ maxWidth: '800px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
 
             {/* Badge */}
             <motion.div
@@ -154,14 +144,14 @@ export default function LandingPage() {
               style={{
                 fontSize: 'clamp(0.95rem, 1.8vw, 1.15rem)',
                 color: 'rgba(200,220,255,0.82)',
-                maxWidth: '460px',
+                maxWidth: '600px',
                 marginBottom: '40px',
                 lineHeight: 1.75,
                 fontWeight: 400,
               }}
             >
               AutoDash turns raw data into actionable insights instantly —
-              connect your data to the world.
+              visualize your world through a cosmic lens.
             </motion.p>
 
             {/* CTAs */}
@@ -169,7 +159,7 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.65, duration: 0.7 }}
-              style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}
             >
               <Link to="/auth" style={{ textDecoration: 'none' }}>
                 <motion.button
@@ -200,7 +190,7 @@ export default function LandingPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1, duration: 0.7 }}
-              style={{ display: 'flex', gap: '36px', marginTop: '48px', flexWrap: 'wrap' }}
+              style={{ display: 'flex', justifyContent: 'center', gap: '48px', marginTop: '48px', flexWrap: 'wrap' }}
             >
               {[['10K+', 'Users'], ['50M+', 'Rows Parsed'], ['4.9★', 'Rating']].map(([val, label]) => (
                 <div key={label}>
@@ -210,47 +200,6 @@ export default function LandingPage() {
               ))}
             </motion.div>
           </div>
-
-          {/* ── RIGHT: Rotating Network Globe ── */}
-          <motion.div
-            initial={{ opacity: 0, x: 60, scale: 0.88 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            transition={{ delay: 0.4, duration: 1.1, ease: [0.23, 1, 0.32, 1] }}
-            style={{
-              flex: '1 1 440px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              position: 'relative',
-            }}
-          >
-            {/* Outer glow ring */}
-            <div style={{
-              position: 'absolute',
-              width: 510, height: 510,
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(37,99,235,0.18) 0%, rgba(37,99,235,0.06) 50%, transparent 75%)',
-              filter: 'blur(24px)',
-              animation: 'pulseGlow 4s ease-in-out infinite',
-            }} />
-            {/* Thin ring border */}
-            <div style={{
-              position: 'absolute',
-              width: 478, height: 478,
-              borderRadius: '50%',
-              border: '1px solid rgba(37,99,235,0.2)',
-              animation: 'spin 20s linear infinite',
-            }} />
-            <div style={{
-              position: 'absolute',
-              width: 510, height: 510,
-              borderRadius: '50%',
-              border: '1px dashed rgba(96,165,250,0.12)',
-              animation: 'spin 35s linear infinite reverse',
-            }} />
-
-            <GLBViewer size={460} />
-          </motion.div>
         </motion.div>
 
         {/* Scroll indicator */}
