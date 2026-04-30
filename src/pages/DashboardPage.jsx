@@ -567,6 +567,16 @@ export default function DashboardPage() {
                         <option value="sales">Sales Template</option>
                         <option value="marketing">Marketing View</option>
                       </select>
+                      <motion.button 
+                        whileHover={{ scale: 1.05 }}
+                        onClick={() => loadCSV(null, '')}
+                        style={{
+                          padding: '10px 18px', borderRadius: 10, background: 'rgba(37,99,235,0.15)',
+                          border: '1px solid rgba(37,99,235,0.3)', color: '#60A5FA', cursor: 'pointer',
+                          fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: 8, fontWeight: 700
+                        }}>
+                        <RefreshCcw size={16} /> New Data Source
+                      </motion.button>
                     </>
                   )}
                 </div>
@@ -802,19 +812,6 @@ export default function DashboardPage() {
               )}
 
 
-              {/* Upload new floating */}
-              <div style={{ textAlign: 'right', marginTop: 14 }}>
-                <motion.button 
-                  whileHover={{ scale: 1.05 }}
-                  onClick={() => loadCSV(null, '')}
-                  style={{
-                    padding: '11px 22px', borderRadius: 12, background: 'rgba(37,99,235,0.15)',
-                    border: '1px solid rgba(37,99,235,0.3)', color: '#60A5FA', cursor: 'pointer',
-                    fontSize: '0.88rem', display: 'inline-flex', alignItems: 'center', gap: 8, fontWeight: 700
-                  }}>
-                  <RefreshCcw size={16} /> New Data Source
-                </motion.button>
-              </div>
 
             </motion.div>
           )}
