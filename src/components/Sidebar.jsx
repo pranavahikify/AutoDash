@@ -149,7 +149,6 @@ export function MobileBottomNav() {
   const nav = useNavigate();
   const location = useLocation();
   const cur = location.pathname;
-  const { logout } = useAuth();
 
   const navItems = [
     { label: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/dashboard' },
@@ -167,24 +166,38 @@ export function MobileBottomNav() {
             key={item.path}
             onClick={() => nav(item.path)}
             style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
               background: 'none', border: 'none', cursor: 'pointer',
               color: active ? '#60A5FA' : 'rgba(160,180,220,0.45)',
               fontSize: '0.65rem', fontWeight: active ? 700 : 500,
-              padding: '4px 12px',
+              padding: '4px 0',
+              flex: 1,
               position: 'relative',
               transition: 'color 0.2s',
             }}>
-            {active && (
-              <motion.div
-                layoutId="nav-indicator"
-                style={{
-                  position: 'absolute', top: -1, left: '50%', transform: 'translateX(-50%)',
-                  width: 28, height: 3, borderRadius: 2,
-                  background: 'linear-gradient(90deg, #2563EB, #60A5FA)',
-                }}
-              />
-            )}
+            {/* Centered indicator bar — no layoutId so it doesn't slide */}
+            <AnimatePresence>
+              {active && (
+                <motion.div
+                  key={item.path + '-indicator'}
+                  initial={{ opacity: 0, scaleX: 0 }}
+                  animate={{ opacity: 1, scaleX: 1 }}
+                  exit={{ opacity: 0, scaleX: 0 }}
+                  transition={{ duration: 0.2 }}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: 28,
+                    height: 3,
+                    borderRadius: 2,
+                    background: 'linear-gradient(90deg, #2563EB, #60A5FA)',
+                    transformOrigin: 'center',
+                  }}
+                />
+              )}
+            </AnimatePresence>
             {item.icon}
             {item.label}
           </button>
