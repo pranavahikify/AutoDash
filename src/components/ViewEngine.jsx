@@ -130,6 +130,13 @@ export default function ViewEngine({ activeData, cols, headers, view }) {
   const { numeric, text, dates } = cols;
   const labelCol = dates[0] || text[0] || headers[0];
   const catCol = text.find(c => c !== labelCol) || text[0] || headers[0];
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   if (!activeData || activeData.length === 0) {
     return (
@@ -161,11 +168,11 @@ export default function ViewEngine({ activeData, cols, headers, view }) {
           <StatCard label={`Total ${m1}`} value={fmt(st1.sum)} trend={st1.trend} color="#F59E0B" />
           <StatCard label={`Avg ${m1}`} value={fmt(st1.avg)} trend={st1.trend} color="#10B981" />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 20 }}>
           {m1 && (
-            <div style={{ gridColumn: 'span 2' }}>
+            <div style={{ gridColumn: isMobile ? '1' : 'span 2' }}>
               <ChartCard title={`${m1} Performance Trend`}>
-                <ResponsiveContainer width="100%" height={260}>
+                <ResponsiveContainer width="100%" height={isMobile ? 220 : 260}>
                   <AreaChart data={areaData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                     <defs>
                       <linearGradient id="glowBlue" x1="0" y1="0" x2="0" y2="1">
@@ -184,9 +191,9 @@ export default function ViewEngine({ activeData, cols, headers, view }) {
             </div>
           )}
           {catCol && barData.length > 0 && (
-            <div style={{ gridColumn: 'span 1' }}>
+            <div style={{ gridColumn: isMobile ? '1' : 'span 1' }}>
               <ChartCard title={`${catCol} Distribution`}>
-                <ResponsiveContainer width="100%" height={260}>
+                <ResponsiveContainer width="100%" height={isMobile ? 220 : 260}>
                   <PieChart>
                     <Pie data={barData} cx="50%" cy="45%" innerRadius={60} outerRadius={85} dataKey="value" stroke="none">
                       {barData.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
@@ -276,10 +283,10 @@ export default function ViewEngine({ activeData, cols, headers, view }) {
           <StatCard label="Avg Ticket Size" value={fmt(revStats.avg)} trend={revStats.trend} color="#3B82F6" />
           <StatCard label="Total Transactions" value={fmt(activeData.length)} color="#8B5CF6" />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
-          <div style={{ gridColumn: 'span 2' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 20 }}>
+          <div style={{ gridColumn: isMobile ? '1' : 'span 2' }}>
             <ChartCard title="Revenue Timeline">
-              <ResponsiveContainer width="100%" height={260}>
+              <ResponsiveContainer width="100%" height={isMobile ? 220 : 260}>
                 <AreaChart data={salesData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                   <defs>
                     <linearGradient id="glowGreen" x1="0" y1="0" x2="0" y2="1">
@@ -296,9 +303,9 @@ export default function ViewEngine({ activeData, cols, headers, view }) {
               </ResponsiveContainer>
             </ChartCard>
           </div>
-          <div style={{ gridColumn: 'span 1' }}>
+          <div style={{ gridColumn: isMobile ? '1' : 'span 1' }}>
             <ChartCard title="Top Selling Categories">
-              <ResponsiveContainer width="100%" height={260}>
+              <ResponsiveContainer width="100%" height={isMobile ? 220 : 260}>
                 <BarChart data={barData} layout="vertical" margin={{ top: 0, right: 0, left: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" horizontal={false} />
                   <XAxis type="number" hide />
@@ -322,7 +329,7 @@ export default function ViewEngine({ activeData, cols, headers, view }) {
     const marketData = aggregateByCategory(activeData, regionCol, m1).slice(0, 6);
     
     const content = (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 20, marginBottom: 20 }}>
         <ChartCard title="Market Share (Region)">
           <ResponsiveContainer width="100%" height={280}>
             <PieChart>
@@ -392,7 +399,7 @@ export default function ViewEngine({ activeData, cols, headers, view }) {
     const segmentation = segCol ? aggregateByCategory(activeData, segCol, m1) : null;
 
     const content = (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 20 }}>
         <ChartCard title="Top 10 Customers">
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={topCustomers} layout="vertical" margin={{ left: 10 }}>
@@ -436,7 +443,7 @@ export default function ViewEngine({ activeData, cols, headers, view }) {
     const bottom = [...prodData].reverse().slice(0, 5);
 
     const content = (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 20 }}>
         <ChartCard title="Best Performing Products">
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={top} margin={{ top: 20 }}>

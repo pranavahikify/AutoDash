@@ -29,7 +29,8 @@ import {
 import toast from 'react-hot-toast';
 import { AnimatePresence } from 'framer-motion';
 import ViewEngine, { ViewDropdown } from '../components/ViewEngine';
-import Sidebar from '../components/Sidebar';
+import Sidebar, { MobileBottomNav } from '../components/Sidebar';
+import '../styles/mobile.css';
 
 const PALETTE = ['#0EA5E9', '#10B981', '#6366F1', '#8B5CF6', '#F59E0B', '#EF4444', '#14B8A6', '#3B82F6'];
 
@@ -354,6 +355,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const { csvData, headers, fileName, loadCSV } = useDashboard();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('overview'); // overview | insights | data
   const [filterQuery, setFilterQuery] = useState({}); // column-based filters
@@ -361,8 +363,15 @@ export default function DashboardPage() {
   const [openDropdown, setOpenDropdown] = useState(null); 
   const [currentView, setCurrentView] = useState('default');
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const dashboardRef = useRef(null);
   const exportMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
 
   useEffect(() => {
@@ -512,146 +521,159 @@ export default function DashboardPage() {
       <div className="orb orb-2" />
       <div className="orb orb-3" />
 
-      <Sidebar collapsed={collapsed} />
+      {/* Sidebar: hidden on mobile, shows as overlay */}
+      {!isMobile && <Sidebar collapsed={collapsed} mobileOpen={false} onMobileClose={() => {}} />}
+      {isMobile && <Sidebar collapsed={false} mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />}
 
-      <main style={{ flex: 1, overflowY: 'auto', height: '100vh', position: 'relative', zIndex: 1 }}>
+      <main style={{ flex: 1, overflowY: 'auto', height: '100vh', position: 'relative', zIndex: 1, paddingBottom: isMobile ? 72 : 0 }}>
         {/* ── Header ── */}
         <div style={{
-          padding: '20px 32px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex',
-          alignItems: 'center', justifyContent: 'space-between', gap: 16, 
+          padding: isMobile ? '12px 16px' : '20px 32px',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: isMobile ? 'wrap' : 'nowrap',
+          gap: isMobile ? 10 : 16,
           background: 'rgba(5, 11, 24, 0.6)',
           position: 'sticky', top: 0, zIndex: 40, backdropFilter: 'blur(24px)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <motion.button 
               whileHover={{ scale: 1.1, background: 'rgba(255,255,255,0.08)' }}
               whileTap={{ scale: 0.9 }}
-              onClick={() => setCollapsed(p => !p)}
+              onClick={() => isMobile ? setMobileOpen(true) : setCollapsed(p => !p)}
               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#60A5FA', cursor: 'pointer', padding: 8, borderRadius: 10 }}>
               <Menu size={20} />
             </motion.button>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <h1 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '1.6rem', fontWeight: 900, margin: 0, color: '#F0F6FF', letterSpacing: '-0.02em' }}>
-                  Welcome, {userName}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <h1 style={{ fontFamily: 'Outfit,sans-serif', fontSize: isMobile ? '1.1rem' : '1.6rem', fontWeight: 900, margin: 0, color: '#F0F6FF', letterSpacing: '-0.02em' }}>
+                  {isMobile ? `Hi, ${userName.split(' ')[0]}` : `Welcome, ${userName}`}
                 </h1>
                 <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2 }}>
-                  <Sparkles size={18} color="#F59E0B" />
+                  <Sparkles size={16} color="#F59E0B" />
                 </motion.div>
               </div>
-              {fileName && <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: 'rgba(160,180,220,0.55)', fontWeight: 500 }}>
-                📄 {fileName} · <span style={{ color: '#60A5FA' }}>{filteredData?.length} rows</span> · {headers.length} cols
+              {fileName && <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: 'rgba(160,180,220,0.55)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: isMobile ? 180 : 400 }}>
+                📄 {fileName} · <span style={{ color: '#60A5FA' }}>{filteredData?.length} rows</span>
               </p>}
             </div>
           </div>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-            <div style={{ position: 'relative' }}>
-              <Search size={15} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(160,180,220,0.5)' }} />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Global search..."
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 18, flex: isMobile ? 1 : 'none', justifyContent: 'flex-end' }}>
+            <div style={{ position: 'relative', flex: isMobile ? 1 : 'none' }}>
+              <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(160,180,220,0.5)' }} />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder={isMobile ? 'Search...' : 'Global search...'}
                 className="glass-input"
                 style={{
-                  paddingLeft: 40, paddingRight: 16, paddingTop: 10, paddingBottom: 10, borderRadius: 12,
+                  paddingLeft: 36, paddingRight: 12, paddingTop: 9, paddingBottom: 9, borderRadius: 12,
                   background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-                  color: '#F0F6FF', fontSize: '0.9rem', outline: 'none', width: 220, fontWeight: 500,
-                  transition: 'all 0.3s'
+                  color: '#F0F6FF', fontSize: '0.88rem', outline: 'none',
+                  width: isMobile ? '100%' : 220,
+                  fontWeight: 500, transition: 'all 0.3s'
                 }} />
             </div>
 
-            <div style={{ position: 'relative' }}>
-              <motion.button 
-                whileHover={{ scale: 1.05 }} 
-                onClick={() => setShowExportMenu(!showExportMenu)}
-                style={{ 
-                  background: 'rgba(37, 99, 235, 0.15)', 
-                  border: '1px solid rgba(37, 99, 235, 0.3)', 
-                  color: '#60A5FA', 
-                  padding: '10px 18px', 
-                  borderRadius: 12, 
-                  cursor: 'pointer', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: 8,
-                  fontWeight: 700,
-                  fontSize: '0.88rem'
-                }}>
-                <Download size={16} /> Export
-                <ChevronDown size={14} style={{ transform: showExportMenu ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-              </motion.button>
+            {!isMobile && (
+              <div style={{ position: 'relative' }}>
+                <motion.button 
+                  whileHover={{ scale: 1.05 }} 
+                  onClick={() => setShowExportMenu(!showExportMenu)}
+                  style={{ 
+                    background: 'rgba(37, 99, 235, 0.15)', 
+                    border: '1px solid rgba(37, 99, 235, 0.3)', 
+                    color: '#60A5FA', 
+                    padding: '10px 18px', 
+                    borderRadius: 12, 
+                    cursor: 'pointer', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 8,
+                    fontWeight: 700,
+                    fontSize: '0.88rem'
+                  }}>
+                  <Download size={16} /> Export
+                  <ChevronDown size={14} style={{ transform: showExportMenu ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                </motion.button>
 
-              <AnimatePresence>
-                {showExportMenu && (
-                  <motion.div
-                    ref={exportMenuRef}
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    style={{
-                      position: 'absolute', top: '100%', right: 0, marginTop: 10,
-                      background: 'rgba(10, 18, 40, 0.98)',
-                      border: '1px solid rgba(255,255,255,0.12)',
-                      borderRadius: 16, padding: 8, minWidth: 160,
-                      boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
-                      backdropFilter: 'blur(24px)', zIndex: 100,
-                    }}
-                  >
-                    <motion.button 
-                      whileHover={{ background: 'rgba(255,255,255,0.05)' }}
-                      onClick={() => exportDashboard('pdf')} 
+                <AnimatePresence>
+                  {showExportMenu && (
+                    <motion.div
+                      ref={exportMenuRef}
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
                       style={{
-                        width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-                        padding: '12px 14px', background: 'transparent', border: 'none',
-                        borderRadius: 12, color: '#F0F6FF', cursor: 'pointer', fontSize: '0.85rem'
-                      }}>
-                      <FilePdf size={16} color="#EF4444" />
-                      <div style={{ textAlign: 'left' }}>
-                        <div style={{ fontWeight: 700 }}>Export as PDF</div>
-                        <div style={{ fontSize: '0.7rem', color: 'rgba(160,180,220,0.5)' }}>Vectorized document</div>
-                      </div>
-                    </motion.button>
-                    <motion.button 
-                      whileHover={{ background: 'rgba(255,255,255,0.05)' }}
-                      onClick={() => exportDashboard('png')} 
-                      style={{
-                        width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-                        padding: '12px 14px', background: 'transparent', border: 'none',
-                        borderRadius: 12, color: '#F0F6FF', cursor: 'pointer', fontSize: '0.85rem'
-                      }}>
-                      <FilePng size={16} color="#3B82F6" />
-                      <div style={{ textAlign: 'left' }}>
-                        <div style={{ fontWeight: 700 }}>Export as PNG</div>
-                        <div style={{ fontSize: '0.7rem', color: 'rgba(160,180,220,0.5)' }}>High-res image</div>
-                      </div>
-                    </motion.button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                        position: 'absolute', top: '100%', right: 0, marginTop: 10,
+                        background: 'rgba(10, 18, 40, 0.98)',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: 16, padding: 8, minWidth: 160,
+                        boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
+                        backdropFilter: 'blur(24px)', zIndex: 100,
+                      }}
+                    >
+                      <motion.button 
+                        whileHover={{ background: 'rgba(255,255,255,0.05)' }}
+                        onClick={() => exportDashboard('pdf')} 
+                        style={{
+                          width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+                          padding: '12px 14px', background: 'transparent', border: 'none',
+                          borderRadius: 12, color: '#F0F6FF', cursor: 'pointer', fontSize: '0.85rem'
+                        }}>
+                        <FilePdf size={16} color="#EF4444" />
+                        <div style={{ textAlign: 'left' }}>
+                          <div style={{ fontWeight: 700 }}>Export as PDF</div>
+                          <div style={{ fontSize: '0.7rem', color: 'rgba(160,180,220,0.5)' }}>Vectorized document</div>
+                        </div>
+                      </motion.button>
+                      <motion.button 
+                        whileHover={{ background: 'rgba(255,255,255,0.05)' }}
+                        onClick={() => exportDashboard('png')} 
+                        style={{
+                          width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+                          padding: '12px 14px', background: 'transparent', border: 'none',
+                          borderRadius: 12, color: '#F0F6FF', cursor: 'pointer', fontSize: '0.85rem'
+                        }}>
+                        <FilePng size={16} color="#3B82F6" />
+                        <div style={{ textAlign: 'left' }}>
+                          <div style={{ fontWeight: 700 }}>Export as PNG</div>
+                          <div style={{ fontSize: '0.7rem', color: 'rgba(160,180,220,0.5)' }}>High-res image</div>
+                        </div>
+                      </motion.button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
         </div>
 
-        <div ref={dashboardRef} style={{ padding: '24px 28px' }}>
+        {/* Mobile bottom nav */}
+        {isMobile && <MobileBottomNav />}
+
+        <div ref={dashboardRef} style={{ padding: isMobile ? '16px 12px' : '24px 28px' }}>
           {!csvData ? <UploadZone onLoad={loadCSV} /> : (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
 
               {/* ── Tab Switcher & Conditional Controls ── */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center', marginBottom: 16, gap: 10 }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {activeTab === 'overview' && (
                     <>
-                      <button onClick={() => setShowFilters(!showFilters)} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: showFilters ? '#60A5FA' : '#fff', padding: '10px 16px', borderRadius: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', fontWeight: 600 }}>
-                        <Filter size={16} /> Filters
+                      <button onClick={() => setShowFilters(!showFilters)} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: showFilters ? '#60A5FA' : '#fff', padding: isMobile ? '8px 12px' : '10px 16px', borderRadius: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', fontWeight: 600 }}>
+                        <Filter size={15} /> Filters
                       </button>
                       <ViewDropdown currentView={currentView} onChange={setCurrentView} />
                       <motion.button 
                         whileHover={{ scale: 1.05 }}
                         onClick={() => loadCSV(null, '')}
                         style={{
-                          padding: '10px 18px', borderRadius: 10, background: 'rgba(37,99,235,0.15)',
+                          padding: isMobile ? '8px 12px' : '10px 18px', borderRadius: 10, background: 'rgba(37,99,235,0.15)',
                           border: '1px solid rgba(37,99,235,0.3)', color: '#60A5FA', cursor: 'pointer',
-                          fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: 8, fontWeight: 700
+                          fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700
                         }}>
-                        <RefreshCcw size={16} /> New Data Source
+                        <RefreshCcw size={15} /> {isMobile ? 'New CSV' : 'New Data Source'}
                       </motion.button>
                     </>
                   )}

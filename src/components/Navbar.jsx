@@ -163,7 +163,7 @@ export default function Navbar({ darkMode, toggleDark }) {
                 </AnimatePresence>
               </div>
             ) : (
-              <Link to="/auth" style={{ textDecoration: 'none' }}>
+              <Link to="/auth" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
                 <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} className="btn-primary" style={{ padding: '10px 22px', fontSize: '0.9rem' }}>
                   Get Started
                 </motion.button>

@@ -9,8 +9,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useDashboard } from '../context/DashboardContext';
-import Sidebar from '../components/Sidebar';
+import Sidebar, { MobileBottomNav } from '../components/Sidebar';
 import { supabase } from '../lib/supabase';
+import '../styles/mobile.css';
 
 const N8N_WEBHOOK = 'https://nikobellic.app.n8n.cloud/webhook/ai-analysis';
 
@@ -67,6 +68,8 @@ const Bubble = ({ msg, index }) => {
 /* ══ MAIN PAGE ══════════════════════════════════════════ */
 export default function AIAnalysisPage() {
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const { rawFile: csvFile, loadCSV, saveToHistory, chatMessages: messages, setChatMessages: setMessages, currentSessionId, setCurrentSessionId } = useDashboard();
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -78,6 +81,12 @@ export default function AIAnalysisPage() {
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
   const { user } = useAuth();
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -268,18 +277,22 @@ export default function AIAnalysisPage() {
       <div style={{ position: 'fixed', width: 600, height: 600, borderRadius: '50%', filter: 'blur(100px)', background: 'radial-gradient(circle,rgba(37,99,235,0.14) 0%,transparent 70%)', top: -200, right: -100, pointerEvents: 'none', zIndex: 0 }} />
       <div style={{ position: 'fixed', width: 400, height: 400, borderRadius: '50%', filter: 'blur(80px)', background: 'radial-gradient(circle,rgba(37,99,235,0.1) 0%,transparent 70%)', bottom: 50, left: -80, pointerEvents: 'none', zIndex: 0 }} />
 
-      <Sidebar collapsed={collapsed} />
+      {!isMobile && <Sidebar collapsed={collapsed} mobileOpen={false} onMobileClose={() => {}} />}
+      {isMobile && <Sidebar collapsed={false} mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />}
 
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', position: 'relative', zIndex: 1 }}>
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', position: 'relative', zIndex: 1, paddingBottom: isMobile ? 72 : 0 }}>
         <div style={{
-          padding: '18px 28px', borderBottom: '1px solid rgba(255,255,255,0.06)',
+          padding: isMobile ? '12px 14px' : '18px 28px',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexWrap: isMobile ? 'wrap' : 'nowrap',
+          gap: isMobile ? 8 : 0,
           background: 'rgba(5,11,24,0.7)', backdropFilter: 'blur(24px)',
           position: 'sticky', top: 0, zIndex: 40
         }}>
-          {/* LEFT: Logo and Title */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1 }}>
-            <button onClick={() => setCollapsed(p => !p)}
+          {/* LEFT: Menu + Title */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
+            <button onClick={() => isMobile ? setMobileOpen(true) : setCollapsed(p => !p)}
               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#60A5FA', cursor: 'pointer', padding: 8, borderRadius: 10 }}>
               <Menu size={18} />
             </button>
@@ -423,18 +436,18 @@ export default function AIAnalysisPage() {
               </div>
 
               {messages.length <= 1 && csvFile && (
-                <div style={{ padding: '0 32px 12px', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <div style={{ padding: isMobile ? '0 12px 10px' : '0 32px 12px', display: 'flex', gap: 8, overflowX: 'auto', flexWrap: isMobile ? 'nowrap' : 'wrap', paddingBottom: 10 }}>
                   {['What are the column names?', 'Show me summary statistics', 'What is the highest value?', 'How many rows are there?'].map(q => (
                     <button key={q} onClick={() => { setInput(q); inputRef.current?.focus(); }}
-                      style={{ padding: '7px 14px', borderRadius: 20, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', background: 'rgba(37,99,235,0.1)', border: '1px solid rgba(37,99,235,0.2)', color: '#60A5FA', transition: 'all 0.2s' }}>
+                      style={{ padding: '7px 14px', borderRadius: 20, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', background: 'rgba(37,99,235,0.1)', border: '1px solid rgba(37,99,235,0.2)', color: '#60A5FA', transition: 'all 0.2s', whiteSpace: 'nowrap', flexShrink: 0 }}>
                       {q}
                     </button>
                   ))}
                 </div>
               )}
 
-              <div style={{ padding: '16px 28px 24px', background: 'rgba(5,11,24,0.6)', backdropFilter: 'blur(16px)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', maxWidth: 860, margin: '0 auto' }}>
+              <div style={{ padding: isMobile ? '12px 14px 16px' : '16px 28px 24px', background: 'rgba(5,11,24,0.6)', backdropFilter: 'blur(16px)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', maxWidth: 860, margin: '0 auto' }}>
                   <div style={{ flex: 1, position: 'relative' }}>
                     <textarea
                       ref={inputRef}
@@ -479,6 +492,7 @@ export default function AIAnalysisPage() {
             </>
           )}
         </div>
+        {isMobile && <MobileBottomNav />}
       </main>
     </div>
   );
