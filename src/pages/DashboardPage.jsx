@@ -564,77 +564,75 @@ export default function DashboardPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 18, flex: isMobile ? 1 : 'none', justifyContent: 'flex-end' }}>
 
 
-            {!isMobile && (
-              <div style={{ position: 'relative' }}>
-                <motion.button 
-                  whileHover={{ scale: 1.05 }} 
-                  onClick={() => setShowExportMenu(!showExportMenu)}
-                  style={{ 
-                    background: 'rgba(37, 99, 235, 0.15)', 
-                    border: '1px solid rgba(37, 99, 235, 0.3)', 
-                    color: '#60A5FA', 
-                    padding: '10px 18px', 
-                    borderRadius: 12, 
-                    cursor: 'pointer', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: 8,
-                    fontWeight: 700,
-                    fontSize: '0.88rem'
-                  }}>
-                  <Download size={16} /> Export
-                  <ChevronDown size={14} style={{ transform: showExportMenu ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-                </motion.button>
+            <div style={{ position: 'relative' }}>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                style={{
+                  background: 'rgba(37, 99, 235, 0.15)',
+                  border: '1px solid rgba(37, 99, 235, 0.3)',
+                  color: '#60A5FA',
+                  padding: isMobile ? '9px 12px' : '10px 18px',
+                  borderRadius: 12,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontWeight: 700,
+                  fontSize: '0.88rem'
+                }}>
+                <Download size={16} />
+                {!isMobile && <><span>Export</span><ChevronDown size={14} style={{ transform: showExportMenu ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} /></>}
+              </motion.button>
 
-                <AnimatePresence>
-                  {showExportMenu && (
-                    <motion.div
-                      ref={exportMenuRef}
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              <AnimatePresence>
+                {showExportMenu && (
+                  <motion.div
+                    ref={exportMenuRef}
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    style={{
+                      position: 'absolute', top: '100%', right: 0, marginTop: 10,
+                      background: 'rgba(10, 18, 40, 0.98)',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: 16, padding: 8, minWidth: 160,
+                      boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
+                      backdropFilter: 'blur(24px)', zIndex: 200,
+                    }}
+                  >
+                    <motion.button
+                      whileHover={{ background: 'rgba(255,255,255,0.05)' }}
+                      onClick={() => exportDashboard('pdf')}
                       style={{
-                        position: 'absolute', top: '100%', right: 0, marginTop: 10,
-                        background: 'rgba(10, 18, 40, 0.98)',
-                        border: '1px solid rgba(255,255,255,0.12)',
-                        borderRadius: 16, padding: 8, minWidth: 160,
-                        boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
-                        backdropFilter: 'blur(24px)', zIndex: 100,
-                      }}
-                    >
-                      <motion.button 
-                        whileHover={{ background: 'rgba(255,255,255,0.05)' }}
-                        onClick={() => exportDashboard('pdf')} 
-                        style={{
-                          width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-                          padding: '12px 14px', background: 'transparent', border: 'none',
-                          borderRadius: 12, color: '#F0F6FF', cursor: 'pointer', fontSize: '0.85rem'
-                        }}>
-                        <FilePdf size={16} color="#EF4444" />
-                        <div style={{ textAlign: 'left' }}>
-                          <div style={{ fontWeight: 700 }}>Export as PDF</div>
-                          <div style={{ fontSize: '0.7rem', color: 'rgba(160,180,220,0.5)' }}>Vectorized document</div>
-                        </div>
-                      </motion.button>
-                      <motion.button 
-                        whileHover={{ background: 'rgba(255,255,255,0.05)' }}
-                        onClick={() => exportDashboard('png')} 
-                        style={{
-                          width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-                          padding: '12px 14px', background: 'transparent', border: 'none',
-                          borderRadius: 12, color: '#F0F6FF', cursor: 'pointer', fontSize: '0.85rem'
-                        }}>
-                        <FilePng size={16} color="#3B82F6" />
-                        <div style={{ textAlign: 'left' }}>
-                          <div style={{ fontWeight: 700 }}>Export as PNG</div>
-                          <div style={{ fontSize: '0.7rem', color: 'rgba(160,180,220,0.5)' }}>High-res image</div>
-                        </div>
-                      </motion.button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
+                        width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+                        padding: '12px 14px', background: 'transparent', border: 'none',
+                        borderRadius: 12, color: '#F0F6FF', cursor: 'pointer', fontSize: '0.85rem'
+                      }}>
+                      <FilePdf size={16} color="#EF4444" />
+                      <div style={{ textAlign: 'left' }}>
+                        <div style={{ fontWeight: 700 }}>Export as PDF</div>
+                        <div style={{ fontSize: '0.7rem', color: 'rgba(160,180,220,0.5)' }}>Vectorized document</div>
+                      </div>
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ background: 'rgba(255,255,255,0.05)' }}
+                      onClick={() => exportDashboard('png')}
+                      style={{
+                        width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+                        padding: '12px 14px', background: 'transparent', border: 'none',
+                        borderRadius: 12, color: '#F0F6FF', cursor: 'pointer', fontSize: '0.85rem'
+                      }}>
+                      <FilePng size={16} color="#3B82F6" />
+                      <div style={{ textAlign: 'left' }}>
+                        <div style={{ fontWeight: 700 }}>Export as PNG</div>
+                        <div style={{ fontSize: '0.7rem', color: 'rgba(160,180,220,0.5)' }}>High-res image</div>
+                      </div>
+                    </motion.button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
 
