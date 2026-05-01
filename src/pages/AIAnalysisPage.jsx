@@ -282,105 +282,132 @@ export default function AIAnalysisPage() {
 
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', position: 'relative', zIndex: 1, paddingBottom: isMobile ? 72 : 0 }}>
         <div style={{
-          padding: isMobile ? '12px 14px' : '18px 28px',
+          padding: isMobile ? '10px 12px' : '18px 28px',
           borderBottom: '1px solid rgba(255,255,255,0.06)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          flexWrap: isMobile ? 'wrap' : 'nowrap',
+          display: 'flex', flexDirection: 'column',
           gap: isMobile ? 8 : 0,
           background: 'rgba(5,11,24,0.7)', backdropFilter: 'blur(24px)',
           position: 'sticky', top: 0, zIndex: 40
         }}>
-          {/* LEFT: Menu + Title */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
-            <button onClick={() => isMobile ? setMobileOpen(true) : setCollapsed(p => !p)}
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#60A5FA', cursor: 'pointer', padding: 8, borderRadius: 10 }}>
-              <Menu size={18} />
-            </button>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#2563EB,#60A5FA)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 20px rgba(37,99,235,0.4)' }}>
-                <Brain size={18} color="#fff" />
-              </div>
-              <div>
-                <h1 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#F0F6FF' }}>AI Analysis</h1>
-                <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(160,180,220,0.5)' }}>Powered by Google Gemini</p>
-              </div>
-            </div>
-          </div>
-
-          {/* CENTER: CSV Indicator */}
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-            <AnimatePresence>
-              {csvFile && (
-                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.3)', borderRadius: 12 }}>
-                  <FileText size={14} color="#60A5FA" />
-                  <span style={{ fontSize: '0.83rem', color: '#60A5FA', fontWeight: 600, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{csvFile.name}</span>
-                  <button onClick={removeFile} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(160,180,220,0.5)', display: 'flex', padding: 2 }}>
-                    <X size={14} />
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* RIGHT: History & New Chat */}
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12 }}>
-            <div style={{ position: 'relative' }}>
-              <button 
-                onClick={() => setShowHistory(!showHistory)}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#F0F6FF', padding: '8px 14px', borderRadius: 10, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500, transition: 'all 0.2s' }}>
-                <History size={16} color="#60A5FA" />
-                History
-                <ChevronDown size={14} style={{ opacity: 0.6 }} />
+          {/* ROW 1: Menu + Title + History + New Chat */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            {/* LEFT: Menu + Title */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+              <button onClick={() => isMobile ? setMobileOpen(true) : setCollapsed(p => !p)}
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#60A5FA', cursor: 'pointer', padding: 8, borderRadius: 10, flexShrink: 0 }}>
+                <Menu size={18} />
               </button>
-              
-              <AnimatePresence>
-                {showHistory && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    transition={{ duration: 0.15 }}
-                    style={{ position: 'absolute', top: '100%', right: 0, marginTop: 8, width: 260, background: '#0A1124', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, boxShadow: '0 10px 40px rgba(0,0,0,0.5)', zIndex: 50, overflow: 'hidden' }}
-                  >
-                    <div style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: '0.75rem', fontWeight: 600, color: 'rgba(160,180,220,0.6)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                      Recent Chats
-                    </div>
-                    <div style={{ maxHeight: 280, overflowY: 'auto' }}>
-                      {sessions.length === 0 ? (
-                        <div style={{ padding: 20, textAlign: 'center', color: 'rgba(160,180,220,0.5)', fontSize: '0.8rem' }}>No history yet</div>
-                      ) : (
-                        sessions.map(s => {
-                          const initial = s.csv_file_name ? s.csv_file_name.charAt(0).toUpperCase() : 'C';
-                          return (
-                          <div 
-                            key={s.id}
-                            onClick={() => loadSession(s)}
-                            style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,0.03)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, background: currentSessionId === s.id ? 'rgba(37,99,235,0.1)' : 'transparent', transition: 'background 0.2s' }}
-                          >
-                            <div style={{ width: 28, height: 28, borderRadius: 6, background: currentSessionId === s.id ? 'linear-gradient(135deg,#2563EB,#60A5FA)' : 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 'bold', color: '#fff', flexShrink: 0 }}>
-                              {initial}
-                            </div>
-                            <div style={{ flex: 1, overflow: 'hidden' }}>
-                              <div style={{ fontSize: '0.85rem', color: currentSessionId === s.id ? '#60A5FA' : '#E8F1FF', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.title}</div>
-                              <div style={{ fontSize: '0.7rem', color: 'rgba(160,180,220,0.5)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.csv_file_name || 'Dataset'}</div>
-                            </div>
-                          </div>
-                        )})
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                <div style={{ width: isMobile ? 28 : 36, height: isMobile ? 28 : 36, borderRadius: 10, background: 'linear-gradient(135deg,#2563EB,#60A5FA)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 20px rgba(37,99,235,0.4)', flexShrink: 0 }}>
+                  <Brain size={isMobile ? 14 : 18} color="#fff" />
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <h1 style={{ margin: 0, fontSize: isMobile ? '0.92rem' : '1.1rem', fontWeight: 800, color: '#F0F6FF', whiteSpace: 'nowrap' }}>AI Analysis</h1>
+                  {!isMobile && <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(160,180,220,0.5)' }}>Powered by Google Gemini</p>}
+                </div>
+              </div>
             </div>
-            
-            <button 
-              onClick={startNewChat}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'linear-gradient(135deg,#2563EB,#60A5FA)', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: 10, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, boxShadow: '0 4px 14px rgba(37,99,235,0.3)', transition: 'all 0.2s' }}>
-              <Plus size={16} />
-              New Chat
-            </button>
+
+            {/* CENTER: CSV pill (desktop only in row 1) */}
+            {!isMobile && (
+              <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+                <AnimatePresence>
+                  {csvFile && (
+                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.3)', borderRadius: 10 }}>
+                      <FileText size={13} color="#60A5FA" />
+                      <span style={{ fontSize: '0.82rem', color: '#60A5FA', fontWeight: 600, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{csvFile.name}</span>
+                      <button onClick={removeFile} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(160,180,220,0.5)', display: 'flex', padding: 2 }}>
+                        <X size={13} />
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+
+            {/* RIGHT: History + New Chat */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+              {/* History dropdown */}
+              <div style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setShowHistory(!showHistory)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#F0F6FF', padding: isMobile ? '7px 10px' : '8px 14px', borderRadius: 10, cursor: 'pointer', fontSize: isMobile ? '0.78rem' : '0.85rem', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                  <History size={15} color="#60A5FA" />
+                  {!isMobile && <span>History</span>}
+                  <ChevronDown size={12} style={{ opacity: 0.6 }} />
+                </button>
+
+                <AnimatePresence>
+                  {showHistory && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      style={{
+                        position: 'absolute', top: '100%', right: 0, marginTop: 8,
+                        width: isMobile ? '90vw' : 260,
+                        maxWidth: isMobile ? 340 : 260,
+                        background: '#0A1124',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: 14,
+                        boxShadow: '0 10px 40px rgba(0,0,0,0.6)',
+                        zIndex: 200, overflow: 'hidden',
+                      }}
+                    >
+                      <div style={{ padding: '11px 14px', borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: '0.75rem', fontWeight: 600, color: 'rgba(160,180,220,0.6)', textTransform: 'uppercase', letterSpacing: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span>Recent Chats</span>
+                        <button onClick={() => setShowHistory(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(160,180,220,0.5)', display: 'flex', padding: 2 }}><X size={14} /></button>
+                      </div>
+                      <div style={{ maxHeight: 240, overflowY: 'auto' }}>
+                        {sessions.length === 0 ? (
+                          <div style={{ padding: 20, textAlign: 'center', color: 'rgba(160,180,220,0.5)', fontSize: '0.8rem' }}>No history yet</div>
+                        ) : (
+                          sessions.map(s => {
+                            const initial = s.csv_file_name ? s.csv_file_name.charAt(0).toUpperCase() : 'C';
+                            return (
+                            <div
+                              key={s.id}
+                              onClick={() => { loadSession(s); setShowHistory(false); }}
+                              style={{ padding: '11px 14px', borderBottom: '1px solid rgba(255,255,255,0.03)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, background: currentSessionId === s.id ? 'rgba(37,99,235,0.1)' : 'transparent', transition: 'background 0.2s' }}
+                            >
+                              <div style={{ width: 28, height: 28, borderRadius: 6, background: currentSessionId === s.id ? 'linear-gradient(135deg,#2563EB,#60A5FA)' : 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 'bold', color: '#fff', flexShrink: 0 }}>
+                                {initial}
+                              </div>
+                              <div style={{ flex: 1, overflow: 'hidden' }}>
+                                <div style={{ fontSize: '0.83rem', color: currentSessionId === s.id ? '#60A5FA' : '#E8F1FF', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.title}</div>
+                                <div style={{ fontSize: '0.7rem', color: 'rgba(160,180,220,0.5)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.csv_file_name || 'Dataset'}</div>
+                              </div>
+                            </div>
+                          )})
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* New Chat button */}
+              <button
+                onClick={startNewChat}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'linear-gradient(135deg,#2563EB,#60A5FA)', border: 'none', color: '#fff', padding: isMobile ? '7px 10px' : '8px 16px', borderRadius: 10, cursor: 'pointer', fontSize: isMobile ? '0.78rem' : '0.85rem', fontWeight: 600, boxShadow: '0 4px 14px rgba(37,99,235,0.25)', whiteSpace: 'nowrap' }}>
+                <Plus size={isMobile ? 14 : 16} />
+                {isMobile ? 'New' : 'New Chat'}
+              </button>
+            </div>
           </div>
+
+          {/* ROW 2 (mobile only): CSV file pill — full width */}
+          {isMobile && csvFile && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 10px', background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.3)', borderRadius: 10, minWidth: 0 }}>
+              <FileText size={13} color="#60A5FA" style={{ flexShrink: 0 }} />
+              <span style={{ fontSize: '0.78rem', color: '#60A5FA', fontWeight: 600, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{csvFile.name}</span>
+              <button onClick={removeFile} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(160,180,220,0.5)', display: 'flex', padding: 2, flexShrink: 0 }}>
+                <X size={13} />
+              </button>
+            </div>
+          )}
         </div>
 
         <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
