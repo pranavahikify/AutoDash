@@ -273,14 +273,14 @@ export default function AIAnalysisPage() {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#050B18', color: '#F0F6FF', fontFamily: 'Inter,sans-serif', overflow: 'hidden', position: 'relative' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#050B18', color: '#F0F6FF', fontFamily: 'Inter,sans-serif', position: 'relative' }}>
       <div style={{ position: 'fixed', width: 600, height: 600, borderRadius: '50%', filter: 'blur(100px)', background: 'radial-gradient(circle,rgba(37,99,235,0.14) 0%,transparent 70%)', top: -200, right: -100, pointerEvents: 'none', zIndex: 0 }} />
       <div style={{ position: 'fixed', width: 400, height: 400, borderRadius: '50%', filter: 'blur(80px)', background: 'radial-gradient(circle,rgba(37,99,235,0.1) 0%,transparent 70%)', bottom: 50, left: -80, pointerEvents: 'none', zIndex: 0 }} />
 
       {!isMobile && <Sidebar collapsed={collapsed} mobileOpen={false} onMobileClose={() => {}} />}
       {isMobile && <Sidebar collapsed={false} mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />}
 
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', position: 'relative', zIndex: 1, paddingBottom: isMobile ? 72 : 0 }}>
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', position: 'relative', zIndex: 1, paddingBottom: isMobile ? 72 : 0 }}>
         <div style={{
           padding: isMobile ? '10px 12px' : '18px 28px',
           borderBottom: '1px solid rgba(255,255,255,0.06)',
@@ -475,8 +475,8 @@ export default function AIAnalysisPage() {
                 </div>
               )}
 
-              <div style={{ padding: isMobile ? '10px 14px 14px' : '16px 28px 24px', background: 'rgba(5,11,24,0.6)', backdropFilter: 'blur(16px)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', maxWidth: 860, margin: '0 auto' }}>
+              <div style={{ padding: isMobile ? '8px 12px 10px' : '16px 28px 24px', background: 'rgba(5,11,24,0.6)', backdropFilter: 'blur(16px)', borderTop: '1px solid rgba(255,255,255,0.06)', boxSizing: 'border-box' }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', width: '100%', boxSizing: 'border-box' }}>
                   <div style={{ flex: 1, position: 'relative' }}>
                     <textarea
                       ref={inputRef}
@@ -489,11 +489,12 @@ export default function AIAnalysisPage() {
                       style={{
                         width: '100%', resize: 'none', background: 'rgba(255,255,255,0.05)',
                         border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14,
-                        padding: isMobile ? '11px 14px' : '14px 18px',
-                        color: '#F0F6FF', fontSize: isMobile ? '0.9rem' : '0.95rem', outline: 'none', fontFamily: 'inherit',
-                        transition: 'border-color 0.2s, box-shadow 0.2s', lineHeight: 1.5,
-                        boxShadow: input ? '0 0 0 3px rgba(37,99,235,0.15)' : 'none',
-                        borderColor: input ? 'rgba(37,99,235,0.5)' : 'rgba(255,255,255,0.10)'
+                        padding: isMobile ? '10px 12px' : '14px 18px',
+                        color: '#F0F6FF', fontSize: '16px', outline: 'none', fontFamily: 'inherit',
+                        transition: 'border-color 0.2s, box-shadow 0.2s', lineHeight: 1.4,
+                        boxShadow: input ? '0 0 0 2px rgba(37,99,235,0.3)' : 'none',
+                        borderColor: input ? 'rgba(37,99,235,0.5)' : 'rgba(255,255,255,0.10)',
+                        boxSizing: 'border-box'
                       }}
                     />
                   </div>

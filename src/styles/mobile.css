@@ -263,10 +263,7 @@
     touch-action: manipulation;
   }
 
-  /* Prevent zoom on input focus (iOS) */
-  input, textarea, select {
-    font-size: 16px !important;
-  }
+  /* font-size: 16px is applied inline on inputs to prevent iOS auto-zoom */
 }
 
 /* ── Sidebar overlay backdrop ── */
