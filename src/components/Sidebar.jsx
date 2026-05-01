@@ -175,27 +175,31 @@ export function MobileBottomNav() {
               position: 'relative',
               transition: 'color 0.2s',
             }}>
-            {/* Centered indicator bar — no layoutId so it doesn't slide */}
+            {/* Position wrapper centers the bar; motion.div only fades */}
             <AnimatePresence>
               {active && (
-                <motion.div
-                  key={item.path + '-indicator'}
-                  initial={{ opacity: 0, scaleX: 0 }}
-                  animate={{ opacity: 1, scaleX: 1 }}
-                  exit={{ opacity: 0, scaleX: 0 }}
-                  transition={{ duration: 0.2 }}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: 28,
-                    height: 3,
-                    borderRadius: 2,
-                    background: 'linear-gradient(90deg, #2563EB, #60A5FA)',
-                    transformOrigin: 'center',
-                  }}
-                />
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  display: 'flex',
+                  justifyContent: 'center',
+                }}>
+                  <motion.div
+                    key={item.path + '-indicator'}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    style={{
+                      width: 28,
+                      height: 3,
+                      borderRadius: 2,
+                      background: 'linear-gradient(90deg, #2563EB, #60A5FA)',
+                    }}
+                  />
+                </div>
               )}
             </AnimatePresence>
             {item.icon}
