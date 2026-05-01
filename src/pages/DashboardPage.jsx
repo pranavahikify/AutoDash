@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { motion } from 'framer-motion';
@@ -17,16 +17,19 @@ import {
   Upload, TrendingUp, TrendingDown, Search, Bell, Menu,
   ChevronDown, MoreVertical, Brain, 
   Filter, Download, Zap, RefreshCcw, Eye, Map, FileJson, 
-  FileText as FilePdf, Image as FilePng, Sparkles
+  FileText as FilePdf, Image as FilePng, Sparkles, AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useDashboard } from '../context/DashboardContext';
 import {
   classifyColumns, buildChartData, aggregateByCategory,
-  getStats, fmt, getAIInsights, parseNum
+  getStats, fmt, getAIInsights, parseNum,
+  getSmartSummary, generateExplanation, getDetailedStats, getCorrelation
 } from '../utils/csvAnalyzer';
 import toast from 'react-hot-toast';
 import { AnimatePresence } from 'framer-motion';
+import ViewEngine, { ViewDropdown } from '../components/ViewEngine';
+import Sidebar from '../components/Sidebar';
 
 const PALETTE = ['#0EA5E9', '#10B981', '#6366F1', '#8B5CF6', '#F59E0B', '#EF4444', '#14B8A6', '#3B82F6'];
 
@@ -96,6 +99,80 @@ const ChartCard = ({ title, badge, children, style = {} }) => (
   </motion.div>
 );
 
+/* ── Insight Item ─────────────────────────────────────── */
+const InsightItem = ({ ins, index }) => {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 15 }} 
+      animate={{ opacity: 1, y: 0 }} 
+      transition={{ delay: index * 0.1 }}
+      className="glow-border"
+      style={{ 
+        padding: 24, borderRadius: 20, 
+        background: 'rgba(255,255,255,0.02)', 
+        border: '1px solid rgba(255,255,255,0.06)',
+        display: 'flex', flexDirection: 'column', gap: 16,
+        position: 'relative', overflow: 'hidden'
+      }}
+    >
+      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+        <div style={{ 
+          width: 44, height: 44, borderRadius: 14, 
+          background: ins.sentiment === 'positive' ? 'rgba(16,185,129,0.1)' : (ins.sentiment === 'warning' ? 'rgba(239,68,68,0.1)' : 'rgba(37,99,235,0.1)'),
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          fontSize: '1.2rem'
+        }}>
+          {ins.icon}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <div style={{ fontWeight: 800, color: '#F0F6FF', fontSize: '1.05rem' }}>{ins.title}</div>
+            <div style={{ 
+              fontSize: '0.65rem', fontWeight: 900, padding: '3px 8px', borderRadius: 20,
+              background: 'rgba(255,255,255,0.05)', color: ins.confidence === 'High' ? '#10B981' : '#F59E0B'
+            }}>
+              {ins.confidence} Confidence
+            </div>
+          </div>
+          <div style={{ fontSize: '0.92rem', color: 'rgba(180,200,240,0.75)', lineHeight: 1.6 }}>{ins.text}</div>
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {expanded && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }} 
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            style={{ overflow: 'hidden', padding: '12px 16px', background: 'rgba(0,0,0,0.2)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.04)' }}
+          >
+            <div style={{ fontSize: '0.82rem', color: 'rgba(160,180,220,0.8)', fontStyle: 'italic', display: 'flex', gap: 8 }}>
+              <Sparkles size={14} color="#60A5FA" style={{ flexShrink: 0, marginTop: 2 }} />
+              <span>{generateExplanation(ins)}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <motion.button 
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={() => setExpanded(!expanded)}
+        style={{ 
+          marginTop: 4, width: '100%', padding: '10px', borderRadius: 10, 
+          background: expanded ? 'rgba(255,255,255,0.06)' : 'rgba(37,99,235,0.1)', 
+          color: expanded ? '#fff' : '#60A5FA', border: 'none', fontWeight: 700, 
+          cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          transition: 'all 0.3s'
+        }}
+      >
+        <Brain size={14} /> {expanded ? 'Hide Explanation' : 'Explain Insight'}
+      </motion.button>
+    </motion.div>
+  );
+};
+
 /* ── Stat Card ───────────────────────────────────────── */
 const StatCard = ({ label, value, trend, delay = 0, color = '#0EA5E9' }) => (
   <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay, duration: 0.5 }}
@@ -117,73 +194,106 @@ const StatCard = ({ label, value, trend, delay = 0, color = '#0EA5E9' }) => (
   </motion.div>
 );
 
-/* ── Sidebar ─────────────────────────────────────────── */
-const Sidebar = ({ collapsed, onToggle }) => {
-  const { logout } = useAuth();
-  const nav = useNavigate();
-  const items = [
-    { label: 'Dashboard', icon: <LayoutDashboard size={18} />, path: '/dashboard' },
-    { label: 'Profile', icon: <User size={18} />, path: '/profile' },
-    { label: 'History', icon: <History size={18} />, path: '/history' },
-  ];
-  const cur = window.location.pathname;
+
+/* ── Filter Dropdown Component ────────────────────────── */
+const FilterDropdown = ({ column, data, currentFilter, onUpdate, onClose }) => {
+  const isNum = !isNaN(parseNum(data[0]?.[column])) && data.some(r => parseNum(r[column]) !== 0);
+  const [search, setSearch] = useState('');
+  
+  const uniqueValues = useMemo(() => {
+    const set = new Set(data.map(r => String(r[column])));
+    return Array.from(set).sort((a, b) => isNum ? parseNum(a) - parseNum(b) : a.localeCompare(b));
+  }, [data, column, isNum]);
+
+  const filteredValues = useMemo(() => 
+    uniqueValues.filter(v => v.toLowerCase().includes(search.toLowerCase())),
+    [uniqueValues, search]
+  );
+  
+  const selectedValues = currentFilter?.type === 'set' ? currentFilter.values : uniqueValues;
+
+  const toggleValue = (val) => {
+    let next;
+    if (selectedValues.includes(val)) {
+      next = selectedValues.filter(v => v !== val);
+    } else {
+      next = [...selectedValues, val];
+    }
+    onUpdate({ type: 'set', values: next });
+  };
+
   return (
-    <aside style={{
-      width: collapsed ? 80 : 240, minHeight: '100vh', 
-      background: 'rgba(5, 11, 24, 0.7)',
-      borderRight: '1px solid rgba(255,255,255,0.06)', 
-      display: 'flex', flexDirection: 'column',
-      transition: 'all 0.4s cubic-bezier(0.23, 1, 0.32, 1)', 
-      flexShrink: 0, position: 'sticky', top: 0, zIndex: 50,
-      backdropFilter: 'blur(32px)'
-    }}>
-      <div style={{ padding: '32px 24px', display: 'flex', alignItems: 'center', gap: 14 }}>
-        <div style={{
-          width: 38, height: 38, background: 'linear-gradient(135deg,#2563EB,#60A5FA)',
-          borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', 
-          flexShrink: 0, boxShadow: '0 8px 24px rgba(37,99,235,0.4)'
-        }}>
-          <LayoutDashboard size={18} color="#fff" />
-        </div>
-        {!collapsed && <span style={{
-          fontFamily: 'Outfit,sans-serif', fontWeight: 900, fontSize: '1.4rem',
-          background: 'linear-gradient(135deg,#F0F6FF,#60A5FA)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          letterSpacing: '-0.02em'
-        }}>AutoDash</span>}
+    <motion.div 
+      initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+      style={{
+        position: 'absolute', top: '100%', left: 0, zIndex: 9999, marginTop: 8,
+        width: 260, background: '#0F172A', border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: 16, boxShadow: '0 20px 50px rgba(0,0,0,0.5)', padding: 16,
+        backdropFilter: 'blur(20px)'
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <span style={{ fontWeight: 800, fontSize: '0.8rem', color: 'rgba(160,180,220,0.8)', textTransform: 'uppercase' }}>{column}</span>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#60A5FA', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700 }}>DONE</button>
       </div>
-      <nav style={{ flex: 1, padding: '14px 16px' }}>
-        {items.map(item => {
-          const active = cur === item.path;
-          return (
-            <motion.button 
-              key={item.label} 
-              onClick={() => nav(item.path)}
-              whileHover={{ x: 4 }}
-              style={{
-                width: '100%', display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px',
-                borderRadius: 14, marginBottom: 8, cursor: 'pointer',
-                background: active ? 'rgba(37,99,235,0.12)' : 'transparent',
-                border: active ? '1px solid rgba(37,99,235,0.25)' : '1px solid transparent',
-                color: active ? '#60A5FA' : 'rgba(160,180,220,0.6)',
-                fontSize: '0.92rem', fontWeight: active ? 700 : 500, transition: 'all 0.3s'
-              }}>
-              <div style={{ color: active ? '#60A5FA' : 'inherit' }}>{item.icon}</div>
-              {!collapsed && <span>{item.label}</span>}
-            </motion.button>
-          );
-        })}
-      </nav>
-      <button onClick={() => { logout(); nav('/'); }}
-        style={{
-          margin: '24px 16px', padding: '14px 16px', borderRadius: 14, display: 'flex', alignItems: 'center',
-          gap: 14, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)',
-          color: '#F87171', cursor: 'pointer', fontSize: '0.92rem', fontWeight: 600,
-          transition: 'all 0.3s'
-        }}>
-        <LogOut size={18} />
-        {!collapsed && <span>Logout</span>}
-      </button>
-    </aside>
+
+      {isNum && (
+        <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#60A5FA', marginBottom: 8 }}>NUMERIC RANGE</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {['gt', 'lt', 'between'].map(op => (
+              <button 
+                key={op}
+                onClick={() => onUpdate({ type: 'num', op, val: '', min: '', max: '' })}
+                style={{ 
+                  padding: '4px 10px', borderRadius: 8, fontSize: '0.7rem', cursor: 'pointer',
+                  background: currentFilter?.op === op ? '#2563EB' : 'rgba(255,255,255,0.05)',
+                  border: 'none', color: '#fff', fontWeight: 600
+                }}
+              >
+                {op === 'gt' ? '>' : op === 'lt' ? '<' : 'Range'}
+              </button>
+            ))}
+          </div>
+          {currentFilter?.type === 'num' && (
+            <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+              {currentFilter.op === 'between' ? (
+                <>
+                  <input placeholder="Min" className="glass-input" style={{ width: '50%', padding: '8px' }} value={currentFilter.min || ''} onChange={e => onUpdate({ ...currentFilter, min: e.target.value })} />
+                  <input placeholder="Max" className="glass-input" style={{ width: '50%', padding: '8px' }} value={currentFilter.max || ''} onChange={e => onUpdate({ ...currentFilter, max: e.target.value })} />
+                </>
+              ) : (
+                <input placeholder="Value..." className="glass-input" style={{ width: '100%', padding: '8px' }} value={currentFilter.val || ''} onChange={e => onUpdate({ ...currentFilter, val: e.target.value })} />
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div style={{ marginBottom: 12 }}>
+        <input 
+          placeholder="Find values..." 
+          value={search} onChange={e => setSearch(e.target.value)}
+          style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: '0.85rem' }}
+        />
+      </div>
+
+      <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+        <button onClick={() => onUpdate({ type: 'set', values: uniqueValues })} style={{ flex: 1, fontSize: '0.72rem', padding: '6px', background: 'rgba(37,99,235,0.1)', border: '1px solid rgba(37,99,235,0.2)', color: '#60A5FA', borderRadius: 8, cursor: 'pointer', fontWeight: 700 }}>Select All</button>
+        <button onClick={() => onUpdate({ type: 'set', values: [] })} style={{ flex: 1, fontSize: '0.72rem', padding: '6px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#F87171', borderRadius: 8, cursor: 'pointer', fontWeight: 700 }}>Clear All</button>
+      </div>
+
+      <div style={{ maxHeight: 200, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2, paddingRight: 4 }} className="custom-scrollbar">
+        {filteredValues.slice(0, 100).map(v => (
+          <label key={v} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, cursor: 'pointer', fontSize: '0.85rem', background: selectedValues.includes(v) ? 'rgba(37,99,235,0.08)' : 'transparent', transition: 'background 0.2s' }}>
+            <input type="checkbox" checked={selectedValues.includes(v)} onChange={() => toggleValue(v)} style={{ width: 16, height: 16, accentColor: '#2563EB' }} />
+            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: selectedValues.includes(v) ? '#fff' : 'rgba(160,180,220,0.6)' }}>{v}</span>
+          </label>
+        ))}
+        {filteredValues.length > 100 && <div style={{ textAlign: 'center', padding: '10px 0', color: 'rgba(160,180,220,0.4)', fontSize: '0.8rem' }}>Showing 100 of {filteredValues.length}</div>}
+        {filteredValues.length === 0 && <div style={{ textAlign: 'center', padding: '20px 0', color: 'rgba(160,180,220,0.4)', fontSize: '0.8rem' }}>No matches found</div>}
+      </div>
+    </motion.div>
   );
 };
 
@@ -199,8 +309,8 @@ const UploadZone = ({ onLoad }) => {
       complete: res => {
         setBusy(false);
         if (!res.data.length) return toast.error('CSV is empty');
-        onLoad(res.data, f.name);
-        saveToHistory(f.name, { rows: res.data.length, cols: Object.keys(res.data[0]).length });
+        onLoad(res.data, f.name, f);
+        saveToHistory(f.name, { rows: res.data.length, cols: Object.keys(res.data[0]).length }, res.data);
         toast.success(`✅ Loaded ${res.data.length} rows`);
       },
       error: () => { setBusy(false); toast.error('Parse error'); }
@@ -242,15 +352,14 @@ const UploadZone = ({ onLoad }) => {
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const { csvData, headers, fileName, loadCSV, history } = useDashboard();
+  const { csvData, headers, fileName, loadCSV } = useDashboard();
   const [collapsed, setCollapsed] = useState(false);
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('overview'); // overview | insights | data
-  const [liveMode, setLiveMode] = useState(false);
   const [filterQuery, setFilterQuery] = useState({}); // column-based filters
   const [showFilters, setShowFilters] = useState(false);
-  const [template, setTemplate] = useState('default'); // default | sales | marketing
-  const [liveData, setLiveData] = useState(null);
+  const [openDropdown, setOpenDropdown] = useState(null); 
+  const [currentView, setCurrentView] = useState('default');
   const [showExportMenu, setShowExportMenu] = useState(false);
   const dashboardRef = useRef(null);
   const exportMenuRef = useRef(null);
@@ -267,104 +376,81 @@ export default function DashboardPage() {
   }, []);
 
   /* ── Analyse CSV columns ── */
-  const cols = csvData ? classifyColumns(headers, csvData) : { numeric:[], dates:[], text:[], ids:[] };
-  const labelCol = cols.dates[0] || cols.text[0] || cols.ids[0] || headers[0];
-  const numCols  = cols.numeric;
-  const metrics  = numCols.filter(c => !/id|key|guid|uid|index|year|zip|code|phone|lat|lon|hash/i.test(c));
-  const hasMetrics = metrics.length > 0;
+  const cols = useMemo(() => 
+    csvData ? classifyColumns(headers, csvData) : { numeric:[], dates:[], text:[], ids:[] },
+    [csvData, headers]
+  );
+
+  const metrics = useMemo(() => cols.numeric.filter(c => !/id|key|guid|uid|index|year|zip|code|phone|lat|lon|hash/i.test(c)), [cols]);
+  const labelCol = useMemo(() => cols.dates[0] || cols.text[0] || cols.ids[0] || headers[0], [cols, headers]);
+  const hasMetrics = useMemo(() => metrics.length > 0, [metrics]);
 
   /* ── Filtered Data ── */
-  const filteredData = (csvData || []).filter(row => {
+  const filteredData = useMemo(() => {
+    if (!csvData) return [];
     const term = search.toLowerCase().trim();
-    if (!term) return true;
+    const tokens = term ? term.split(/\s+/) : [];
 
-    // Multi-token search: each word in the search must match at least one column
-    const tokens = term.split(/\s+/);
-    const matchesGlobal = tokens.every(token => 
-      Object.values(row).some(v => String(v).toLowerCase().includes(token))
-    );
-    if (!matchesGlobal) return false;
-
-    // Column-specific filters
-    return Object.entries(filterQuery).every(([col, val]) => {
-      if (!val) return true;
-      return String(row[col]).toLowerCase().includes(val.toLowerCase().trim());
+    // Pre-process filters outside the loop for O(1) evaluation
+    const activeFilters = Object.entries(filterQuery).filter(([_, config]) => config);
+    const processedFilters = activeFilters.map(([col, config]) => {
+      if (config.type === 'set') {
+        return { col, type: 'set', valuesSet: new Set(config.values || []) };
+      }
+      if (config.type === 'num') {
+        const target = parseNum(config.val);
+        const min = config.min !== '' ? parseNum(config.min) : -Infinity;
+        const max = config.max !== '' ? parseNum(config.max) : Infinity;
+        return { col, type: 'num', op: config.op, target, min, max, rawVal: config.val };
+      }
+      return { col, type: 'unknown' };
     });
-  });
 
-  /* ── Live Mode Simulation (Jitter) ── */
-  useEffect(() => {
-    if (!liveMode || !csvData) {
-      setLiveData(null);
-      return;
-    }
-    
-    // Reset live data when underlying filter changes to ensure search is reactive
-    setLiveData(null);
+    return csvData.filter(row => {
+      // 1. Multi-token Global Search
+      if (tokens.length > 0) {
+        const matchesGlobal = tokens.every(token => 
+          Object.values(row).some(v => String(v).toLowerCase().includes(token))
+        );
+        if (!matchesGlobal) return false;
+      }
 
-    const timer = setInterval(() => {
-      setLiveData(prev => {
-        // If liveData was just reset (null), use the fresh filteredData
-        const base = prev || filteredData;
-        return base.map(row => {
-          const newRow = { ...row };
-          metrics.forEach(m => {
-            if (Math.random() > 0.7) {
-              const val = parseNum(row[m]);
-              newRow[m] = (val * (0.98 + Math.random() * 0.04)).toFixed(2);
-            }
-          });
-          return newRow;
-        });
+      // 2. Advanced Excel-like Filters
+      return processedFilters.every(pf => {
+        // Categorical / Set Filter
+        if (pf.type === 'set') {
+          if (pf.valuesSet.size === 0) return true;
+          return pf.valuesSet.has(String(row[pf.col]));
+        }
+
+        // Numeric Filter
+        if (pf.type === 'num') {
+          if (pf.op === 'gt' || pf.op === 'lt') {
+            if (pf.rawVal === '') return true;
+            const val = parseNum(row[pf.col]);
+            if (pf.op === 'gt') return val > pf.target;
+            if (pf.op === 'lt') return val < pf.target;
+          }
+          if (pf.op === 'between') {
+            if (pf.min === -Infinity && pf.max === Infinity) return true;
+            const val = parseNum(row[pf.col]);
+            return val >= pf.min && val <= pf.max;
+          }
+        }
+
+        return true;
       });
-    }, 2000);
-    return () => clearInterval(timer);
-  }, [liveMode, csvData, metrics, filteredData]);
+    });
+  }, [csvData, search, filterQuery]);
 
-  const activeData = liveData || filteredData;
-
-  const tableRowsData = activeData.slice(0, 15);
-  const insights = csvData ? getAIInsights(activeData, cols) : [];
+  const activeData = filteredData;
+  const tableRowsData = useMemo(() => activeData.slice(0, 15), [activeData]);
+  const insights = useMemo(() => activeTab === 'insights' && csvData ? getAIInsights(activeData, cols) : [], [csvData, activeData, cols, activeTab]);
+  const dStats = useMemo(() => activeTab === 'insights' && csvData ? getDetailedStats(activeData, headers, cols) : {}, [csvData, activeData, headers, cols, activeTab]);
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
 
-  /* ── Chart Selection Logic ── */
-  const [chartConfig, setChartConfig] = useState({
-    areaIdx: 0,
-    barIdx: 0,
-    scatterXIdx: 0,
-    scatterYIdx: 1,
-    barLimit: 8
-  });
-
-  const m1 = hasMetrics ? (metrics[chartConfig.areaIdx % metrics.length] || metrics[0]) : 'Count';
-  const m2 = hasMetrics ? (metrics[chartConfig.scatterYIdx % (metrics.length || 1)] || metrics[1] || m1) : null;
-  const mb = hasMetrics ? (metrics[chartConfig.barIdx % metrics.length] || metrics[0]) : null;
-
-  /* ── Chart data ── */
-  const areaData = csvData ? buildChartData(activeData, labelCol, hasMetrics ? metrics : []).map(d => ({ 
-    ...d, 
-    Count: d.Count ?? 1 
-  })) : [];
-
+  const m1 = hasMetrics ? metrics[0] : 'Count';
   const catCol = cols.text.find(c => c !== labelCol) || cols.text[0] || cols.ids[0];
-  const barData = (csvData && catCol)
-    ? aggregateByCategory(activeData, catCol, mb).slice(0, chartConfig.barLimit)
-    : [];
-
-  const st1 = hasMetrics ? getStats(activeData, m1) : { sum: activeData?.length || 0, avg: 1, trend: 0 };
-  const st2 = (hasMetrics && m2 && m2 !== m1) ? getStats(activeData, m2) : null;
-  const uniqueCats = catCol ? new Set(activeData.map(r => r[catCol])).size : 0;
-
-  const statCards = [
-    { label: 'Total Rows', value: fmt(activeData.length), trend: 0, color: 'linear-gradient(135deg,#2563EB,#1D4ED8)' }
-  ];
-  if (st1) {
-    statCards.push({ label: `Total ${m1}`, value: fmt(st1.sum), trend: st1.trend, color: 'linear-gradient(135deg,#F59E0B,#D97706)' });
-    statCards.push({ label: `Avg ${m1}`, value: fmt(st1.avg), trend: st1.trend, color: 'linear-gradient(135deg,#10B981,#059669)' });
-  }
-  if (catCol && statCards.length < 4) {
-    statCards.push({ label: `Unique ${catCol}`, value: fmt(uniqueCats), trend: 0, color: 'linear-gradient(135deg,#EC4899,#BE185D)' });
-  }
 
   const exportDashboard = async (format) => {
     if (!dashboardRef.current) return;
@@ -373,12 +459,20 @@ export default function DashboardPage() {
     const toastId = toast.loading(`Generating ${format.toUpperCase()}...`);
     
     try {
-      // Temporarily hide elements that shouldn't be in the export (like sidebar if needed, but here we just capture the main ref)
-      const canvas = await html2canvas(dashboardRef.current, {
+      const target = dashboardRef.current;
+      
+      // html2canvas clipping fix for scrollable containers
+      const canvas = await html2canvas(target, {
         scale: 2,
-        backgroundColor: '#050B18', // Match dashboard background
+        backgroundColor: '#050B18',
         useCORS: true,
         logging: false,
+        width: target.scrollWidth,
+        height: target.scrollHeight,
+        windowWidth: target.scrollWidth,
+        windowHeight: target.scrollHeight,
+        x: 0,
+        y: 0
       });
 
       if (format === 'png') {
@@ -389,12 +483,16 @@ export default function DashboardPage() {
         toast.success('PNG exported successfully!', { id: toastId });
       } else if (format === 'pdf') {
         const imgData = canvas.toDataURL('image/png');
+        const pdfWidth = canvas.width / 2;
+        const pdfHeight = canvas.height / 2;
+        const orientation = pdfHeight > pdfWidth ? 'portrait' : 'landscape';
+        
         const pdf = new jsPDF({
-          orientation: 'landscape',
+          orientation: orientation,
           unit: 'px',
-          format: [canvas.width / 2, canvas.height / 2]
+          format: [pdfWidth, pdfHeight]
         });
-        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
         pdf.save(`autodash-report-${fileName?.replace('.csv', '') || 'export'}.pdf`);
         toast.success('PDF exported successfully!', { id: toastId });
       }
@@ -414,7 +512,7 @@ export default function DashboardPage() {
       <div className="orb orb-2" />
       <div className="orb orb-3" />
 
-      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed(p => !p)} />
+      <Sidebar collapsed={collapsed} />
 
       <main style={{ flex: 1, overflowY: 'auto', height: '100vh', position: 'relative', zIndex: 1 }}>
         {/* ── Header ── */}
@@ -448,20 +546,6 @@ export default function DashboardPage() {
           </div>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-            {/* Live Toggle */}
-            <div 
-              onClick={() => setLiveMode(!liveMode)}
-              style={{ 
-                display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', 
-                background: liveMode ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.04)',
-                padding: '8px 14px', borderRadius: 12, border: `1px solid ${liveMode ? '#10B981' : 'rgba(255,255,255,0.08)'}`,
-                transition: 'all 0.3s'
-              }}
-            >
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: liveMode ? '#10B981' : '#64748B', boxShadow: liveMode ? '0 0 10px #10B981' : 'none' }} />
-              <span style={{ fontSize: '0.82rem', fontWeight: 700, color: liveMode ? '#10B981' : 'rgba(160,180,220,0.6)' }}>LIVE MODE</span>
-            </div>
-
             <div style={{ position: 'relative' }}>
               <Search size={15} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(160,180,220,0.5)' }} />
               <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Global search..."
@@ -558,15 +642,7 @@ export default function DashboardPage() {
                       <button onClick={() => setShowFilters(!showFilters)} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: showFilters ? '#60A5FA' : '#fff', padding: '10px 16px', borderRadius: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', fontWeight: 600 }}>
                         <Filter size={16} /> Filters
                       </button>
-                      <select 
-                        value={template} 
-                        onChange={e => setTemplate(e.target.value)}
-                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', padding: '10px 16px', borderRadius: 10, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, outline: 'none' }}
-                      >
-                        <option value="default">Default View</option>
-                        <option value="sales">Sales Template</option>
-                        <option value="marketing">Marketing View</option>
-                      </select>
+                      <ViewDropdown currentView={currentView} onChange={setCurrentView} />
                       <motion.button 
                         whileHover={{ scale: 1.05 }}
                         onClick={() => loadCSV(null, '')}
@@ -598,178 +674,292 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* ── Advanced Filters ── */}
-              <AnimatePresence>
-                {activeTab === 'overview' && showFilters && (
-                  <motion.div 
-                    initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                    style={{ overflow: 'hidden', marginBottom: 20 }}
-                  >
-                    <div className="glass-card" style={{ padding: 20, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 14 }}>
-                      {headers.slice(0, 8).map(h => (
-                        <div key={h}>
-                          <label style={{ fontSize: '0.7rem', color: 'rgba(160,180,220,0.5)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 6, display: 'block' }}>{h}</label>
-                          <input 
-                            placeholder={`Filter ${h}...`} 
-                            onChange={e => setFilterQuery(p => ({ ...p, [h]: e.target.value }))}
-                            className="glass-input" 
-                            style={{ width: '100%', fontSize: '0.82rem', padding: '8px 12px' }} 
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+               {/* ── Active Filters Display ── */}
+               {activeTab === 'overview' && Object.keys(filterQuery).length > 0 && (
+                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
+                   {Object.entries(filterQuery).map(([col, config]) => (
+                     <motion.div 
+                       key={col} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                       style={{ 
+                         display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', 
+                         background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.2)',
+                         borderRadius: 14, fontSize: '0.85rem', color: '#60A5FA', fontWeight: 700,
+                         boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                       }}
+                     >
+                       <span style={{ color: 'rgba(160,180,220,0.6)', fontWeight: 500 }}>{col}:</span>
+                       <span>{config.type === 'set' ? `${config.values.length} Selected` : `${config.op.toUpperCase()} ${config.val || `${config.min}-${config.max}`}`}</span>
+                       <button 
+                         onClick={() => {
+                           const next = { ...filterQuery };
+                           delete next[col];
+                           setFilterQuery(next);
+                         }}
+                         style={{ background: 'rgba(239,68,68,0.1)', border: 'none', color: '#F87171', cursor: 'pointer', display: 'flex', padding: 4, borderRadius: 6 }}
+                       >
+                         <LogOut size={12} style={{ transform: 'rotate(45deg)' }} />
+                       </button>
+                     </motion.div>
+                   ))}
+                   <button 
+                     onClick={() => setFilterQuery({})}
+                     style={{ background: 'rgba(255,255,255,0.03)', border: 'none', color: 'rgba(160,180,220,0.5)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700, padding: '8px 16px', borderRadius: 12 }}
+                   >
+                     Clear all filters
+                   </button>
+                 </div>
+               )}
+
+               {/* ── Advanced Pill Filters ── */}
+               <AnimatePresence>
+                 {activeTab === 'overview' && showFilters && (
+                   <motion.div 
+                     initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                     style={{ overflow: 'visible', marginBottom: 24 }}
+                   >
+                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, padding: '4px 2px 10px' }}>
+                       {headers.map(h => (
+                         <div key={h} style={{ position: 'relative' }}>
+                           <button 
+                             onClick={() => setOpenDropdown(openDropdown === h ? null : h)}
+                             style={{
+                               padding: '10px 18px', borderRadius: 14, whiteSpace: 'nowrap',
+                               background: filterQuery[h] ? 'rgba(37,99,235,0.15)' : 'rgba(255,255,255,0.03)',
+                               border: filterQuery[h] ? '1px solid rgba(37,99,235,0.4)' : '1px solid rgba(255,255,255,0.06)',
+                               color: filterQuery[h] ? '#60A5FA' : 'rgba(160,180,220,0.8)', cursor: 'pointer',
+                               fontSize: '0.85rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 10,
+                               transition: 'all 0.2s'
+                             }}
+                           >
+                             {h} <ChevronDown size={14} style={{ opacity: 0.5, transform: openDropdown === h ? 'rotate(180deg)' : 'none', transition: '0.3s' }} />
+                           </button>
+                           {openDropdown === h && (
+                             <FilterDropdown 
+                               column={h} data={csvData} 
+                               currentFilter={filterQuery[h]}
+                               onUpdate={(f) => setFilterQuery(p => ({ ...p, [h]: f }))}
+                               onClose={() => setOpenDropdown(null)}
+                             />
+                           )}
+                         </div>
+                       ))}
+                     </div>
+                   </motion.div>
+                 )}
+               </AnimatePresence>
 
               {activeTab === 'overview' && (
                 <>
-                  {/* ── Stat Cards ── */}
-                  <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 22 }}>
-                    {statCards.slice(0, 4).map((card, i) => (
-                      <StatCard key={card.label} label={card.label} value={card.value}
-                        trend={card.trend} delay={i * 0.08} color={card.color} />
-                    ))}
-                  </div>
-
-                  {/* ── Unified Dashboard Grid ── */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 24, gridAutoFlow: 'dense' }}>
-
-                    {/* 1. Primary Trend (Area Chart) */}
-                    {m1 && (
-                      <div style={{ gridColumn: 'span 2', gridRow: 'span 1' }}>
-                        <ChartCard title={`${m1} Performance Trend`} badge={st1 && <TrendBadge pct={st1.trend} />}>
-                          <ResponsiveContainer width="100%" height={260}>
-                            <AreaChart data={areaData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                              <defs>
-                                <linearGradient id="glowBlue" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="5%" stopColor="#0EA5E9" stopOpacity={0.25} />
-                                  <stop offset="95%" stopColor="#0EA5E9" stopOpacity={0} />
-                                </linearGradient>
-                              </defs>
-                              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-                              <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'rgba(160,180,220,0.5)' }} tickLine={false} axisLine={false} />
-                              <YAxis tick={{ fontSize: 10, fill: 'rgba(160,180,220,0.5)' }} tickLine={false} axisLine={false} tickFormatter={fmt} />
-                              <Tooltip content={<CustomTooltip />} />
-                              <Area type="monotone" dataKey={m1} stroke="#60A5FA" fill="url(#glowBlue)" strokeWidth={3}
-                                activeDot={{ r: 6, fill: '#fff', stroke: '#2563EB', strokeWidth: 3 }} />
-                            </AreaChart>
-                          </ResponsiveContainer>
-                        </ChartCard>
-                      </div>
-                    )}
-
-                    {/* 2. Category Distribution (Pie Chart) */}
-                    {catCol && barData.length > 0 && (
-                      <div style={{ gridColumn: 'span 1' }}>
-                        <ChartCard title={`${catCol} Distribution`}>
-                          <ResponsiveContainer width="100%" height={260}>
-                            <PieChart>
-                              <Pie data={barData} cx="50%" cy="45%" innerRadius={60} outerRadius={85}
-                                dataKey="value" paddingAngle={4} startAngle={90} endAngle={-270} stroke="none">
-                                {barData.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
-                              </Pie>
-                              <Tooltip content={<CustomTooltip />} />
-                              <Legend wrapperStyle={{ fontSize: '0.75rem', color: 'rgba(160,180,220,0.6)', paddingTop: 10 }} />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </ChartCard>
-                      </div>
-                    )}
-
-                    {/* 3. Category Comparison (Bar Chart) */}
-                    {catCol && barData.length > 0 && (
-                      <div style={{ gridColumn: 'span 1' }}>
-                        <ChartCard title={`${catCol} Comparison`} badge={<span style={{ fontSize: '0.75rem', color: '#60A5FA', fontWeight: 600 }}>Top 8</span>}>
-                          <ResponsiveContainer width="100%" height={260}>
-                            <BarChart data={barData} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
-                              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-                              <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'rgba(160,180,220,0.5)' }} tickLine={false} axisLine={false} />
-                              <YAxis tick={{ fontSize: 10, fill: 'rgba(160,180,220,0.5)' }} tickLine={false} axisLine={false} tickFormatter={fmt} />
-                              <Tooltip content={<CustomTooltip />} />
-                              <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={24}>
-                                {barData.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
-                              </Bar>
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </ChartCard>
-                      </div>
-                    )}
-
-                    {/* 4. Multi-metric Comparison (Line Chart) */}
-                    {metrics.length > 1 && (
-                      <div style={{ gridColumn: 'span 2' }}>
-                        <ChartCard title="Metric Convergence">
-                          <ResponsiveContainer width="100%" height={260}>
-                            <LineChart data={areaData} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
-                              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-                              <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'rgba(160,180,220,0.5)' }} tickLine={false} axisLine={false} />
-                              <YAxis tick={{ fontSize: 10, fill: 'rgba(160,180,220,0.5)' }} tickLine={false} axisLine={false} tickFormatter={fmt} />
-                              <Tooltip content={<CustomTooltip />} />
-                              <Legend wrapperStyle={{ fontSize: '0.78rem', color: 'rgba(160,180,220,0.7)' }} />
-                              {metrics.slice(0, 3).map((col, i) => (
-                                <Line key={col} type="monotone" dataKey={col} stroke={PALETTE[i]} strokeWidth={3} dot={false} activeDot={{ r: 5 }} />
-                              ))}
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </ChartCard>
-                      </div>
-                    )}
-                  </div>
+                  <ViewEngine activeData={activeData} cols={cols} headers={headers} view={currentView} />
                 </>
               )}
 
               {activeTab === 'insights' && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                  <ChartCard title="🧠 AI Insights" style={{ gridColumn: 'span 2' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
-                      {insights.map((ins, i) => (
-                        <motion.div 
-                          key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}
-                          style={{ 
-                            padding: 20, borderRadius: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
-                            display: 'flex', gap: 16, alignItems: 'flex-start'
-                          }}
-                        >
-                          <div style={{ 
-                            width: 40, height: 40, borderRadius: 12, background: ins.sentiment === 'positive' ? 'rgba(16,185,129,0.1)' : (ins.sentiment === 'warning' ? 'rgba(245,158,11,0.1)' : 'rgba(37,99,235,0.1)'),
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
-                          }}>
-                            {ins.type === 'trend' ? <TrendingUp size={20} color="#60A5FA" /> : <Brain size={20} color="#818CF8" />}
-                          </div>
-                          <div>
-                            <div style={{ fontWeight: 800, color: '#F0F6FF', marginBottom: 4 }}>{ins.title}</div>
-                            <div style={{ fontSize: '0.88rem', color: 'rgba(160,180,220,0.7)', lineHeight: 1.5 }}>{ins.text}</div>
-                          </div>
-                        </motion.div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+                  
+                  {/* ── Section 1: Industry Purpose ── */}
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+                    className="glass-card" 
+                    style={{ padding: '24px 32px', borderLeft: '4px solid #60A5FA', background: 'rgba(59,130,246,0.03)' }}
+                  >
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 900, marginBottom: 12, color: '#60A5FA', letterSpacing: '0.02em', textTransform: 'uppercase' }}>Why Insights Matter</h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+                      {[
+                        "Understand large datasets instantly",
+                        "Identify critical trends & anomalies",
+                        "Data-backed business decision making",
+                        "Automate manual analysis workflows"
+                      ].map((bullet, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.85rem', color: 'rgba(160,180,220,0.7)' }}>
+                          <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#60A5FA' }} />
+                          {bullet}
+                        </div>
                       ))}
                     </div>
-                    <motion.button 
-                      whileHover={{ scale: 1.02 }}
-                      style={{ marginTop: 20, width: '100%', padding: '14px', borderRadius: 12, background: 'linear-gradient(135deg,#2563EB,#6366F1)', color: '#fff', border: 'none', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
-                    >
-                      <Brain size={18} /> Deep Data Explanation (AI Mode)
-                    </motion.button>
-                  </ChartCard>
-                  
-                  <ChartCard title="🗺️ Location Mapping (Simulated)">
-                    <div style={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: 16 }}>
-                       <Map size={48} color="rgba(160,180,220,0.2)" />
-                       <span style={{ marginLeft: 16, color: 'rgba(160,180,220,0.4)', fontWeight: 600 }}>Map visualization requires geolocation data</span>
-                    </div>
-                  </ChartCard>
+                  </motion.div>
 
-                  <ChartCard title="📊 Distribution Matrix">
-                    <ResponsiveContainer width="100%" height={260}>
-                       <ScatterChart margin={{ top: 15, right: 15, bottom: 0, left: -10 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                          <XAxis type="number" dataKey={m1} tick={{ fontSize: 10, fill: 'rgba(160,180,220,0.5)' }} axisLine={false} tickLine={false} tickFormatter={fmt} />
-                          <YAxis type="number" dataKey={m2 || m1} tick={{ fontSize: 10, fill: 'rgba(160,180,220,0.5)' }} axisLine={false} tickLine={false} tickFormatter={fmt} />
-                          <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<CustomTooltip />} />
-                          <Scatter name="Data" data={areaData} fill={PALETTE[0]} fillOpacity={0.6} />
-                       </ScatterChart>
-                    </ResponsiveContainer>
-                  </ChartCard>
+                  {/* ── Section 3: Key Metrics Cards (Top Tiles) ── */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+                    {(() => {
+                      const summary = getSmartSummary(activeData, headers, cols);
+                      const primaryCol = cols.numeric[0];
+                      const stats = primaryCol ? getStats(activeData, primaryCol) : null;
+                      
+                      const tiles = [
+                        { label: 'Total Rows', value: fmt(summary.rows), sub: 'Entries', icon: <LayoutDashboard size={18} />, color: '#3B82F6' },
+                        { label: 'Total Columns', value: summary.cols, sub: 'Dimensions', icon: <Menu size={18} />, color: '#10B981' },
+                      ];
+
+                      if (stats) {
+                        const spikes = activeData.filter(r => parseNum(r[primaryCol]) > stats.avg * 2).length;
+                        const drops = activeData.filter(r => {
+                          const v = parseNum(r[primaryCol]);
+                          return v < stats.avg * 0.5 && v > 0;
+                        }).length;
+
+                        tiles.push(
+                          { label: `Average ${primaryCol}`, value: fmt(stats.avg), sub: 'Mean', icon: <Zap size={18} />, color: '#F59E0B' },
+                          { label: `Total ${primaryCol}`, value: fmt(stats.sum), sub: 'Sum', icon: <TrendingUp size={18} />, color: '#8B5CF6' },
+                          { label: `Anomalies in ${primaryCol}`, value: spikes + drops, sub: 'Spikes/Drops', icon: <AlertTriangle size={18} />, color: '#EF4444' },
+                          { label: `Max ${primaryCol}`, value: fmt(stats.max), sub: 'Peak', icon: <Sparkles size={18} />, color: '#EC4899' },
+                        );
+                      }
+
+                      return tiles.map((tile, i) => (
+                        <motion.div 
+                          key={`${tile.label}-${i}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+                          className="glass-card" style={{ padding: '24px 20px', borderBottom: `4px solid ${tile.color}`, background: 'rgba(255,255,255,0.01)' }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                            <div style={{ padding: '10px', borderRadius: '12px', background: `${tile.color}15`, color: tile.color }}>
+                              {tile.icon}
+                            </div>
+                            <div style={{ fontSize: '0.65rem', fontWeight: 900, color: 'rgba(160,180,220,0.3)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{tile.sub}</div>
+                          </div>
+                          <div style={{ fontSize: '1.7rem', fontWeight: 900, color: '#fff', marginBottom: 4, letterSpacing: '-0.02em' }}>{tile.value}</div>
+                          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'rgba(160,180,220,0.6)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{tile.label}</div>
+                        </motion.div>
+                      ));
+                    })()}
+                  </div>
+
+                  {/* ── Section 2: CSV Auto Summary (Pandas-Style describe) ── */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+                      {(() => {
+                        const summary = getSmartSummary(activeData, headers, cols);
+                        return [
+                          { label: 'Total Rows', val: summary.rows, icon: <LayoutDashboard size={16} /> },
+                          { label: 'Total Columns', val: summary.cols, icon: <Menu size={16} /> },
+                          { label: 'Numerical', val: cols.numeric.length, icon: <Zap size={16} /> },
+                          { label: 'Categorical', val: cols.text.length + cols.dates.length, icon: <Filter size={16} /> }
+                        ].map(stat => (
+                          <div key={stat.label} className="glass-card" style={{ padding: '16px', background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div style={{ color: '#60A5FA' }}>{stat.icon}</div>
+                            <div>
+                              <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#fff' }}>{stat.val}</div>
+                              <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(160,180,220,0.4)', textTransform: 'uppercase' }}>{stat.label}</div>
+                            </div>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+
+                    <ChartCard title="📊 Column Intelligence (Detailed Statistics)">
+                      <div className="scroll-x" style={{ background: 'rgba(0,0,0,0.1)', borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.04)' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                          <thead>
+                            <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
+                              <th style={{ padding: '14px 16px', textAlign: 'left', color: 'rgba(160,180,220,0.4)', fontWeight: 800 }}>COLUMN NAME</th>
+                              <th style={{ padding: '14px 16px', textAlign: 'left', color: 'rgba(160,180,220,0.4)', fontWeight: 800 }}>TYPE</th>
+                              <th style={{ padding: '14px 16px', textAlign: 'left', color: 'rgba(160,180,220,0.4)', fontWeight: 800 }}>MEAN / TOP</th>
+                              <th style={{ padding: '14px 16px', textAlign: 'left', color: 'rgba(160,180,220,0.4)', fontWeight: 800 }}>MEDIAN / UNIQUE</th>
+                              <th style={{ padding: '14px 16px', textAlign: 'left', color: 'rgba(160,180,220,0.4)', fontWeight: 800 }}>MIN - MAX / FREQ</th>
+                              <th style={{ padding: '14px 16px', textAlign: 'left', color: 'rgba(160,180,220,0.4)', fontWeight: 800 }}>MISSING</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(() => {
+                              return Object.entries(dStats).slice(0, 15).map(([name, s], idx) => (
+                                <tr key={name} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
+                                  <td style={{ padding: '14px 16px', fontWeight: 700, color: '#fff' }}>{name}</td>
+                                  <td style={{ padding: '14px 16px' }}>
+                                    <span style={{ padding: '4px 8px', borderRadius: 6, fontSize: '0.6rem', fontWeight: 900, background: s.type === 'numeric' ? 'rgba(59,130,246,0.1)' : 'rgba(16,185,129,0.1)', color: s.type === 'numeric' ? '#60A5FA' : '#10B981', textTransform: 'uppercase' }}>
+                                      {s.type}
+                                    </span>
+                                  </td>
+                                  <td style={{ padding: '14px 16px', color: '#F0F6FF', fontWeight: 600 }}>
+                                    {s.type === 'numeric' ? fmt(s.mean) : s.top}
+                                  </td>
+                                  <td style={{ padding: '14px 16px', color: 'rgba(160,180,220,0.8)' }}>
+                                    {s.type === 'numeric' ? fmt(s.median) : `${s.unique} unique`}
+                                  </td>
+                                  <td style={{ padding: '14px 16px', color: 'rgba(160,180,220,0.6)' }}>
+                                    {s.type === 'numeric' ? `${fmt(s.min)} - ${fmt(s.max)}` : `${s.pct}% freq`}
+                                  </td>
+                                  <td style={{ padding: '14px 16px', color: s.missing > 0 ? '#EF4444' : '#10B981', fontWeight: 800 }}>
+                                    {s.missing > 0 ? `⚠️ ${s.missing}` : '0'}
+                                  </td>
+                                </tr>
+                              ));
+                            })()}
+                          </tbody>
+                        </table>
+                      </div>
+                    </ChartCard>
+                  </div>
+
+                  {/* ── Section 4-10: Intelligent AI Insights ── */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 24 }}>
+                    <ChartCard title="🧠 AI Analytics Engine & Patterns">
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        {insights.length === 0 ? (
+                          <div style={{ padding: '40px', textAlign: 'center', color: 'rgba(160,180,220,0.4)' }}>No significant insights found.</div>
+                        ) : insights.map((ins, i) => (
+                          <InsightItem key={i} ins={ins} index={i} />
+                        ))}
+                      </div>
+                    </ChartCard>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                      <ChartCard title="🏆 Performance Spectrum">
+                        <div style={{ marginBottom: 20 }}>
+                          <h4 style={{ fontSize: '0.75rem', fontWeight: 900, color: '#10B981', textTransform: 'uppercase', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <TrendingUp size={14} /> Top 5 Categories
+                          </h4>
+                          {catCol && aggregateByCategory(activeData, catCol, m1).slice(0, 5).map((item, i) => (
+                            <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+                              <div style={{ width: 20, height: 20, borderRadius: '50%', background: PALETTE[i], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 900, color: '#fff' }}>{i+1}</div>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#F0F6FF' }}>{item.name}</div>
+                                <div style={{ width: '100%', height: 3, background: 'rgba(255,255,255,0.05)', borderRadius: 2, marginTop: 4 }}>
+                                  <motion.div initial={{ width: 0 }} animate={{ width: `${(item.value / (activeData[0]?.[m1] || item.value) * 100).toFixed(0)}%` }} style={{ height: '100%', background: PALETTE[i], borderRadius: 2 }} />
+                                </div>
+                              </div>
+                              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: PALETTE[i] }}>{fmt(item.value)}</div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div>
+                          <h4 style={{ fontSize: '0.75rem', fontWeight: 900, color: '#EF4444', textTransform: 'uppercase', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <TrendingDown size={14} /> Lowest 5 Categories
+                          </h4>
+                          {catCol && [...aggregateByCategory(activeData, catCol, m1)].reverse().slice(0, 5).map((item, i) => (
+                            <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+                              <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 900, color: '#EF4444' }}>{i+1}</div>
+                              <div style={{ flex: 1, fontSize: '0.8rem', fontWeight: 600, color: 'rgba(160,180,220,0.6)' }}>{item.name}</div>
+                              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#EF4444' }}>{fmt(item.value)}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </ChartCard>
+
+                      <ChartCard title="🔗 Metric Correlation">
+                        {cols.numeric.length >= 2 ? (
+                          <div style={{ textAlign: 'center', padding: '10px 0' }}>
+                            <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#60A5FA', marginBottom: 4 }}>
+                              {(getCorrelation(activeData, cols.numeric[0], cols.numeric[1]) * 100).toFixed(0)}%
+                            </div>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'rgba(160,180,220,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                              Strength: {cols.numeric[0]} vs {cols.numeric[1]}
+                            </div>
+                            <div style={{ marginTop: 16, height: 4, background: 'rgba(255,255,255,0.05)', borderRadius: 10, position: 'relative' }}>
+                               <motion.div 
+                                initial={{ left: '50%' }}
+                                animate={{ left: `${50 + (getCorrelation(activeData, cols.numeric[0], cols.numeric[1]) * 50)}%` }}
+                                style={{ width: 12, height: 12, borderRadius: '50%', background: '#60A5FA', position: 'absolute', top: -4, boxShadow: '0 0 10px #3B82F6' }} 
+                               />
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ padding: 20, textAlign: 'center', color: 'rgba(160,180,220,0.4)', fontSize: '0.8rem' }}>Needs at least 2 numeric columns</div>
+                        )}
+                      </ChartCard>
+                    </div>
+                  </div>
+
                 </div>
               )}
 

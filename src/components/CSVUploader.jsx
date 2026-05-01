@@ -26,7 +26,7 @@ export default function CSVUploader({ onSuccess }) {
         }
         const data = results.data;
         setPreview({ name: file.name, rows: data.length, cols: Object.keys(data[0] || {}) });
-        loadCSV(data, file.name);
+        loadCSV(data, file.name, file);
         saveToHistory(file.name, { rows: data.length, cols: Object.keys(data[0] || {}).length });
         setStatus('success');
         toast.success(`Loaded ${data.length} rows from ${file.name}`);

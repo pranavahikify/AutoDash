@@ -180,7 +180,7 @@ export default function LandingPage() {
                 width: '100%' 
               }}
             >
-              <Link to="/auth" style={{ textDecoration: 'none' }}>
+              <Link to="/auth" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
                 <motion.button
                   whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.96 }}
                   className="btn-primary"
@@ -347,7 +347,7 @@ export default function LandingPage() {
             <p style={{ color: 'rgba(160,180,220,0.75)', marginBottom: '36px', fontSize: '1.05rem', lineHeight: 1.6 }}>
               Join thousands of analysts and businesses using AutoDash.
             </p>
-            <Link to="/auth" style={{ textDecoration: 'none' }}>
+            <Link to="/auth" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
               <motion.button
                 whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}
                 className="btn-primary pulse-glow"

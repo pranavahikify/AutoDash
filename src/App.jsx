@@ -9,6 +9,7 @@ import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
 import HistoryPage from './pages/HistoryPage';
 import ProfilePage from './pages/ProfilePage';
+import AIAnalysisPage from './pages/AIAnalysisPage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -42,7 +43,7 @@ function AppInner() {
   const location = useLocation();
   
   const showNav = useMemo(() => {
-    const hiddenNavRoutes = ['/dashboard'];
+    const hiddenNavRoutes = ['/dashboard', '/ai-analysis', '/profile', '/history'];
     return !hiddenNavRoutes.includes(location.pathname);
   }, [location.pathname]);
 
@@ -68,6 +69,10 @@ function AppInner() {
         <Route
           path="/profile"
           element={<ProtectedRoute><ProfilePage /></ProtectedRoute>}
+        />
+        <Route
+          path="/ai-analysis"
+          element={<ProtectedRoute><AIAnalysisPage /></ProtectedRoute>}
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -1,13 +1,16 @@
 import { motion, useMotionValue, useSpring, useMotionTemplate } from 'framer-motion';
-import { User, Mail, CreditCard, Upload, Calendar, Zap, Shield, ArrowLeft } from 'lucide-react';
+import { User, Mail, CreditCard, Upload, Calendar, Zap, Shield, ArrowLeft, Menu } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useDashboard } from '../context/DashboardContext';
 import { Link, useNavigate } from 'react-router-dom';
+import Sidebar from '../components/Sidebar';
+import { useState } from 'react';
 
 export default function ProfilePage() {
   const { user, upgradePlan } = useAuth();
   const { history } = useDashboard();
   const navigate = useNavigate();
+  const [collapsed, setCollapsed] = useState(false);
 
   // Mouse spotlight logic
   const mouseX = useMotionValue(0);
@@ -33,29 +36,28 @@ export default function ProfilePage() {
   const displayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
 
   return (
-    <div style={{ minHeight: '100vh', paddingTop: '68px', background: '#050B18', position: 'relative' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#050B18', color: '#F0F6FF', fontFamily: 'Inter,sans-serif', position: 'relative', overflow: 'hidden' }}>
       <div className="orb orb-1" />
       <div className="orb orb-2" />
 
-      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '48px 24px', position: 'relative', zIndex: 1 }}>
+      <Sidebar collapsed={collapsed} />
 
-        {/* Back Button */}
-        <motion.button
-          initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-          whileHover={{ x: -3 }} whileTap={{ scale: 0.96 }}
-          onClick={() => navigate('/dashboard')}
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            marginBottom: 28, background: 'rgba(37,99,235,0.1)',
-            border: '1px solid rgba(37,99,235,0.25)', borderRadius: 10,
-            padding: '9px 16px', color: '#60A5FA', cursor: 'pointer',
-            fontSize: '0.85rem', fontWeight: 600,
-          }}
-        >
-          <ArrowLeft size={16} /> Back to Dashboard
-        </motion.button>
+      <main style={{ flex: 1, overflowY: 'auto', height: '100vh', position: 'relative', zIndex: 1 }}>
+        <div style={{
+          padding: '18px 28px', borderBottom: '1px solid rgba(255,255,255,0.06)',
+          display: 'flex', alignItems: 'center', gap: 14,
+          background: 'rgba(5,11,24,0.7)', backdropFilter: 'blur(24px)',
+          position: 'sticky', top: 0, zIndex: 40
+        }}>
+          <button onClick={() => setCollapsed(p => !p)}
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#60A5FA', cursor: 'pointer', padding: 8, borderRadius: 10 }}>
+            <Menu size={18} />
+          </button>
+          <h1 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#F0F6FF' }}>Profile</h1>
+        </div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '48px 24px', position: 'relative', zIndex: 1 }}>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           {/* Profile Header */}
           <motion.div 
             className="glass-card" 
@@ -118,7 +120,8 @@ export default function ProfilePage() {
 
           {/* Upgrade nudge (if free) */}
         </motion.div>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

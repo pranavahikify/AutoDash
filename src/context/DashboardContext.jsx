@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import Papa from 'papaparse';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 import toast from 'react-hot-toast';
@@ -14,6 +15,11 @@ export function DashboardProvider({ children }) {
   const [activeFilters, setActiveFilters] = useState({});
   const [selectedColumn, setSelectedColumn] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
+  const [rawFile, setRawFile] = useState(null);
+  
+  // Chat state persistence
+  const [chatMessages, setChatMessages] = useState([]);
+  const [currentSessionId, setCurrentSessionId] = useState(null);
 
   // Fetch history from Supabase when user logs in
   useEffect(() => {
@@ -21,6 +27,8 @@ export function DashboardProvider({ children }) {
       fetchHistory();
     } else {
       setHistory([]);
+      setChatMessages([]);
+      setCurrentSessionId(null);
     }
   }, [user]);
 
@@ -32,22 +40,29 @@ export function DashboardProvider({ children }) {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setHistory(data.map(item => ({
-        id: item.id,
-        name: item.name,
-        summary: item.summary,
-        date: item.created_at,
-        rows: item.rows_count,
-        file_path: item.file_path
-      })));
+      setHistory(data.map(item => {
+        // Extra defensive path resolution
+        const path = item.file_path || item.filePath || item.path || 
+                     item.summary?.file_path || item.summary?.filePath || item.summary?.path;
+        
+        return {
+          id: item.id,
+          name: item.name,
+          summary: item.summary,
+          date: item.created_at,
+          rows: item.rows_count || item.rows || item.summary?.rows || 0,
+          file_path: path
+        };
+      }));
     } catch (error) {
       console.error('Error fetching history:', error);
     }
   };
 
-  const loadCSV = (data, name) => {
+  const loadCSV = (data, name, fileObj = null) => {
     setCsvData(data);
     setFileName(name);
+    setRawFile(fileObj);
     if (data && data.length > 0) {
       const cols = Object.keys(data[0]);
       setHeaders(cols);
@@ -56,14 +71,16 @@ export function DashboardProvider({ children }) {
     }
   };
 
-  const saveToHistory = async (name, summary) => {
+  const saveToHistory = async (name, summary, dataOverride = null) => {
     if (!user) return;
+    const dataToSave = dataOverride || csvData;
+    
     setIsSyncing(true);
     try {
-      // 1. Upload CSV to Storage (Optional but recommended for "everything should load")
+      // 1. Upload CSV to Storage
       let filePath = null;
-      if (csvData) {
-        const fileContent = JSON.stringify(csvData);
+      if (dataToSave) {
+        const fileContent = JSON.stringify(dataToSave);
         const fileNameInStorage = `${user.id}/${Date.now()}-${name}.json`;
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('user-history')
@@ -79,8 +96,8 @@ export function DashboardProvider({ children }) {
         .insert({
           user_id: user.id,
           name,
-          rows_count: csvData?.length || 0,
-          summary,
+          rows_count: summary?.rows || dataToSave?.length || 0,
+          summary: { ...summary, file_path: filePath }, 
           file_path: filePath
         })
         .select()
@@ -106,28 +123,77 @@ export function DashboardProvider({ children }) {
   };
 
   const loadHistoryItem = async (item) => {
-    if (!item.file_path) return;
+    const loadingToast = toast.loading(`Loading ${item.name}...`);
+    // Check item root, then check if it's nested in summary
+    const path = item.file_path || item.filePath || item.path || 
+                 item.summary?.file_path || item.summary?.filePath || item.summary?.path;
+    
+    if (!path) {
+      console.error('Missing path in history item:', item);
+      toast.error('Data path missing in database record', { id: loadingToast });
+      return false;
+    }
+    
     setIsSyncing(true);
     try {
       const { data, error } = await supabase.storage
         .from('user-history')
-        .download(item.file_path);
+        .download(path);
 
       if (error) throw error;
       const content = await data.text();
       const parsedData = JSON.parse(content);
       
+      if (!Array.isArray(parsedData)) throw new Error('Invalid data format');
+
       setCsvData(parsedData);
       setFileName(item.name);
-      if (parsedData.length > 0) {
-        const cols = Object.keys(parsedData[0]);
-        setHeaders(cols);
-        setSelectedColumn(cols[0]);
-        setActiveFilters({});
-      }
+      
+      const cols = parsedData.length > 0 ? Object.keys(parsedData[0]) : [];
+      setHeaders(cols);
+      setSelectedColumn(cols[0] || '');
+      setActiveFilters({});
+      
+      const csvString = Papa.unparse(parsedData);
+      const file = new File([csvString], item.name, { type: 'text/csv' });
+      setRawFile(file);
+      
+      toast.success('Dashboard loaded', { id: loadingToast });
+      return true; // Success
     } catch (error) {
       console.error('Error loading history item:', error);
-      toast.error('Failed to load history data');
+      toast.error('Failed to load history data', { id: loadingToast });
+      return false; // Failed
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const deleteHistoryItem = async (item) => {
+    setIsSyncing(true);
+    try {
+      // 1. Delete from Storage
+      if (item.file_path) {
+        const { error: storageError } = await supabase.storage
+          .from('user-history')
+          .remove([item.file_path]);
+        if (storageError) console.warn('Storage delete warning:', storageError);
+      }
+
+      // 2. Delete from Database
+      const { error: dbError } = await supabase
+        .from('dashboards')
+        .delete()
+        .eq('id', item.id);
+      
+      if (dbError) throw dbError;
+
+      // 3. Update State
+      setHistory(prev => prev.filter(h => h.id !== item.id));
+      toast.success('Dashboard deleted from history');
+    } catch (error) {
+      console.error('Error deleting history item:', error);
+      toast.error('Failed to delete history item');
     } finally {
       setIsSyncing(false);
     }
@@ -159,9 +225,10 @@ export function DashboardProvider({ children }) {
 
   return (
     <DashboardContext.Provider value={{
-      csvData, headers, fileName, history, activeFilters, selectedColumn, isSyncing,
-      loadCSV, saveToHistory, loadHistoryItem, getFilteredData, getInsights,
-      setActiveFilters, setSelectedColumn,
+      csvData, headers, fileName, history, activeFilters, selectedColumn, isSyncing, rawFile,
+      chatMessages, setChatMessages, currentSessionId, setCurrentSessionId,
+      loadCSV, saveToHistory, loadHistoryItem, deleteHistoryItem, getFilteredData, getInsights,
+      setActiveFilters, setSelectedColumn, setRawFile
     }}>
       {children}
     </DashboardContext.Provider>
@@ -173,3 +240,4 @@ export const useDashboard = () => {
   if (!ctx) throw new Error('useDashboard must be used within DashboardProvider');
   return ctx;
 };
+
