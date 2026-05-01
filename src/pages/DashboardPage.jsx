@@ -562,18 +562,7 @@ export default function DashboardPage() {
           </div>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 18, flex: isMobile ? 1 : 'none', justifyContent: 'flex-end' }}>
-            <div style={{ position: 'relative', flex: isMobile ? 1 : 'none' }}>
-              <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(160,180,220,0.5)' }} />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder={isMobile ? 'Search...' : 'Global search...'}
-                className="glass-input"
-                style={{
-                  paddingLeft: 36, paddingRight: 12, paddingTop: 9, paddingBottom: 9, borderRadius: 12,
-                  background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-                  color: '#F0F6FF', fontSize: '0.88rem', outline: 'none',
-                  width: isMobile ? '100%' : 220,
-                  fontWeight: 500, transition: 'all 0.3s'
-                }} />
-            </div>
+
 
             {!isMobile && (
               <div style={{ position: 'relative' }}>
