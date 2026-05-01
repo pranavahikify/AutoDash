@@ -385,12 +385,14 @@ export default function AIAnalysisPage() {
 
         <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           {!csvFile && messages.length === 0 ? (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40 }}>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? 20 : 40 }}>
               <motion.div {...getRootProps()}
                 initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
                 whileHover={{ scale: 1.02 }}
                 style={{
-                  width: '100%', maxWidth: 480, padding: '70px 48px', textAlign: 'center',
+                  width: '100%', maxWidth: 480,
+                  padding: isMobile ? '40px 24px' : '70px 48px',
+                  textAlign: 'center',
                   background: isDragActive ? 'rgba(37,99,235,0.1)' : 'rgba(255,255,255,0.02)',
                   border: `2px dashed ${isDragActive ? '#2563EB' : 'rgba(255,255,255,0.12)'}`,
                   borderRadius: 28, cursor: 'pointer', transition: 'all 0.3s',
@@ -398,25 +400,25 @@ export default function AIAnalysisPage() {
                 }}>
                 <input {...getInputProps()} />
                 <motion.div animate={isDragActive ? { y: -12 } : { y: 0 }} transition={{ type: 'spring', stiffness: 300 }}
-                  style={{ width: 80, height: 80, borderRadius: 24, background: 'linear-gradient(135deg,#2563EB,#60A5FA)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 28px', boxShadow: '0 12px 36px rgba(37,99,235,0.45)' }}>
-                  <Upload size={34} color="#fff" />
+                  style={{ width: isMobile ? 64 : 80, height: isMobile ? 64 : 80, borderRadius: 24, background: 'linear-gradient(135deg,#2563EB,#60A5FA)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', boxShadow: '0 12px 36px rgba(37,99,235,0.45)' }}>
+                  <Upload size={isMobile ? 28 : 34} color="#fff" />
                 </motion.div>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: 10, color: '#F0F6FF' }}>
+                <h2 style={{ fontSize: isMobile ? '1.2rem' : '1.5rem', fontWeight: 900, marginBottom: 8, color: '#F0F6FF' }}>
                   {isDragActive ? 'Drop it here!' : 'Upload your CSV'}
                 </h2>
-                <p style={{ color: 'rgba(160,180,220,0.55)', fontSize: '1rem', marginBottom: 28 }}>
-                  Drag & drop or click to browse · .csv only
+                <p style={{ color: 'rgba(160,180,220,0.55)', fontSize: isMobile ? '0.88rem' : '1rem', marginBottom: 20 }}>
+                  {isMobile ? 'Tap to browse · .csv only' : 'Drag & drop or click to browse · .csv only'}
                 </p>
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-                  {['Ask anything', 'AI-powered answers', 'Data-strict responses'].map(tag => (
-                    <span key={tag} style={{ padding: '5px 12px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 600, background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.25)', color: '#60A5FA' }}>{tag}</span>
+                  {['Ask anything', 'AI-powered', 'Data-strict'].map(tag => (
+                    <span key={tag} style={{ padding: '4px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 600, background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.25)', color: '#60A5FA' }}>{tag}</span>
                   ))}
                 </div>
               </motion.div>
             </div>
           ) : (
             <>
-              <div style={{ flex: 1, overflowY: 'auto', padding: '28px 32px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px 14px' : '28px 32px', display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <AnimatePresence initial={false}>
                   {messages.map((msg, i) => <Bubble key={i} msg={msg} index={i} />)}
                 </AnimatePresence>
@@ -446,7 +448,7 @@ export default function AIAnalysisPage() {
                 </div>
               )}
 
-              <div style={{ padding: isMobile ? '12px 14px 16px' : '16px 28px 24px', background: 'rgba(5,11,24,0.6)', backdropFilter: 'blur(16px)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ padding: isMobile ? '10px 14px 14px' : '16px 28px 24px', background: 'rgba(5,11,24,0.6)', backdropFilter: 'blur(16px)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', maxWidth: 860, margin: '0 auto' }}>
                   <div style={{ flex: 1, position: 'relative' }}>
                     <textarea
@@ -455,12 +457,13 @@ export default function AIAnalysisPage() {
                       value={input}
                       onChange={e => setInput(e.target.value)}
                       onKeyDown={handleKey}
-                      placeholder={csvFile ? "Ask anything about your CSV..." : "Please upload a CSV to start asking questions..."}
+                      placeholder={csvFile ? 'Ask anything about your CSV...' : 'Please upload a CSV to start...'}
                       disabled={loading || !csvFile}
                       style={{
                         width: '100%', resize: 'none', background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid rgba(255,255,255,0.10)', borderRadius: 16, padding: '14px 18px',
-                        color: '#F0F6FF', fontSize: '0.95rem', outline: 'none', fontFamily: 'inherit',
+                        border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14,
+                        padding: isMobile ? '11px 14px' : '14px 18px',
+                        color: '#F0F6FF', fontSize: isMobile ? '0.9rem' : '0.95rem', outline: 'none', fontFamily: 'inherit',
                         transition: 'border-color 0.2s, box-shadow 0.2s', lineHeight: 1.5,
                         boxShadow: input ? '0 0 0 3px rgba(37,99,235,0.15)' : 'none',
                         borderColor: input ? 'rgba(37,99,235,0.5)' : 'rgba(255,255,255,0.10)'
@@ -472,7 +475,9 @@ export default function AIAnalysisPage() {
                     onClick={sendMessage}
                     disabled={!input.trim() || loading || !csvFile}
                     style={{
-                      width: 50, height: 50, borderRadius: 14, border: 'none', cursor: (!input.trim() || loading || !csvFile) ? 'not-allowed' : 'pointer',
+                      width: isMobile ? 44 : 50, height: isMobile ? 44 : 50,
+                      borderRadius: 14, border: 'none',
+                      cursor: (!input.trim() || loading || !csvFile) ? 'not-allowed' : 'pointer',
                       background: (!input.trim() || loading || !csvFile) ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg,#2563EB,#60A5FA)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                       boxShadow: (!input.trim() || loading || !csvFile) ? 'none' : '0 6px 20px rgba(37,99,235,0.5)',
@@ -480,14 +485,16 @@ export default function AIAnalysisPage() {
                     }}>
                     {loading
                       ? <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 0.9, ease: 'linear' }}
-                          style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.2)', borderTop: '2px solid #60A5FA' }} />
-                      : <Send size={18} color={(!input.trim() || !csvFile) ? 'rgba(160,180,220,0.3)' : '#fff'} />
+                          style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.2)', borderTop: '2px solid #60A5FA' }} />
+                      : <Send size={16} color={(!input.trim() || !csvFile) ? 'rgba(160,180,220,0.3)' : '#fff'} />
                     }
                   </motion.button>
                 </div>
-                <p style={{ textAlign: 'center', fontSize: '0.72rem', color: 'rgba(160,180,220,0.3)', marginTop: 10 }}>
-                  Press Enter to send · Shift+Enter for new line · Answers are based solely on uploaded data
-                </p>
+                {!isMobile && (
+                  <p style={{ textAlign: 'center', fontSize: '0.72rem', color: 'rgba(160,180,220,0.3)', marginTop: 10 }}>
+                    Press Enter to send · Shift+Enter for new line · Answers are based solely on uploaded data
+                  </p>
+                )}
               </div>
             </>
           )}

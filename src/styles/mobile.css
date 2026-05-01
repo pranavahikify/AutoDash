@@ -124,6 +124,54 @@
     font-size: 0.78rem !important;
     padding: 8px 12px !important;
   }
+
+  /* History page cards */
+  .history-card {
+    padding: 14px 12px !important;
+    gap: 10px !important;
+  }
+
+  /* Profile page */
+  .profile-header-card {
+    padding: 20px 16px !important;
+    gap: 14px !important;
+  }
+
+  .profile-avatar {
+    width: 60px !important;
+    height: 60px !important;
+    font-size: 1.5rem !important;
+  }
+
+  /* AI Chat bubbles */
+  .ai-chat-bubble {
+    max-width: 90% !important;
+    font-size: 0.88rem !important;
+    padding: 12px 14px !important;
+  }
+
+  /* Quick suggest chips – horizontal scroll */
+  .ai-suggest-chips {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    padding-bottom: 6px !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .ai-suggest-chips::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* AI top-right buttons: stack or shrink */
+  .ai-header-actions {
+    gap: 6px !important;
+  }
+
+  .ai-header-actions button {
+    padding: 7px 10px !important;
+    font-size: 0.78rem !important;
+  }
 }
 
 @media (max-width: 480px) {
@@ -136,11 +184,11 @@
   }
 
   .stat-card {
-    padding: 16px !important;
+    padding: 14px !important;
   }
 
   .chart-height-sm {
-    height: 220px !important;
+    height: 200px !important;
   }
 
   .dashboard-header-title {
@@ -148,7 +196,18 @@
   }
 
   .ai-chat-bubble {
-    max-width: 88% !important;
+    max-width: 93% !important;
+    font-size: 0.85rem !important;
+  }
+
+  /* History – hide timestamp on very small screens */
+  .history-timestamp {
+    display: none !important;
+  }
+
+  /* Profile name font */
+  .profile-name {
+    font-size: 1.1rem !important;
   }
 }
 
@@ -165,17 +224,48 @@
     left: 0;
     right: 0;
     z-index: 150;
-    background: rgba(5, 11, 24, 0.95);
+    background: rgba(5, 11, 24, 0.97);
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(24px);
-    padding: 8px 0 12px;
+    padding: 8px 0 env(safe-area-inset-bottom, 12px);
     justify-content: space-around;
     align-items: center;
+    -webkit-tap-highlight-color: transparent;
   }
 
   /* Add padding to main so content isn't hidden behind bottom nav */
   .main-content {
     padding-bottom: 72px !important;
+  }
+}
+
+/* ── Global scrollbar styling for mobile ── */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+  }
+}
+
+/* ── Touch-friendly tap targets ── */
+@media (max-width: 768px) {
+  button, a {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  /* Prevent zoom on input focus (iOS) */
+  input, textarea, select {
+    font-size: 16px !important;
   }
 }
 
